@@ -1,3 +1,5 @@
+![](https://raw.githubusercontent.com/nic-of-time/nic-of-time/master/figures/architecture.png?raw=true)
+
 Do we need all the hardware acceleration
 that are present in today's high end network interface cards (NICs)?
 With the increasing number and complexity of networking protocols, we
@@ -9,8 +11,6 @@ for performance.
 This repository presents the **NIC of Time**
 profiling utility
 to study the impact of NIC features on benchmark and application performance.
-
-![](https://raw.githubusercontent.com/nic-of-time/nic-of-time/master/figures/architecture.png?raw=true)
 
 # Results Archive
 Future work is to host the results and analysis.
