@@ -14,7 +14,8 @@ to study the impact of NIC features on benchmark and application performance.
 
 # Results Archive
 Future work is to host the results and analysis.
-See #2 to further discuss.
+See [#2](https://github.com/nic-of-time/nic-of-time/issues/2)
+to further discuss.
 
 # Running benchmarks or applications
 The benchmarks directory contains benchmarks and applications
@@ -29,5 +30,8 @@ NIC features you're interested in.
 4. Run `./analyze-data.py` to parse and interpret the data.
 5. Run `./analyze-data.r` to produce CDF's and plot the data.
 
-# Adding benchmarks or applications
-Better sharing components is future work, see #3.
+# Adding benchmarks or applications.
+For now, copy scripts from `benchmarks`.
+Better sharing components is future work.
+See [#2](https://github.com/nic-of-time/nic-of-time/issues/3)
+to further discuss.
