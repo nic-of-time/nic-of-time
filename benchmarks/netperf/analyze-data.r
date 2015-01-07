@@ -7,20 +7,20 @@ library(ggplot2)
 library(reshape)
 
 s = as.numeric(read.csv("analysis/tcp_sendfile.throughput.csv",header=F))
-u = as.numeric(read.csv("analysis/udp_stream.throughput.csv",header=F))
 t = as.numeric(read.csv("analysis/tcp_stream.throughput.csv",header=F))
+u = as.numeric(read.csv("analysis/udp_stream.throughput.csv",header=F))
 
 p <- ggplot() +
   stat_ecdf(data=data.frame(s),aes(x=s,colour="s")) +
-  stat_ecdf(data=data.frame(u),aes(x=u,colour="u")) +
   stat_ecdf(data=data.frame(t),aes(x=t,colour="t")) +
+  stat_ecdf(data=data.frame(u),aes(x=u,colour="u")) +
   xlab("Bandwidth (Mbps)") +
   ylab("") +
   theme_bw() +
   scale_color_manual(
     name="",
-    values = c("s"="#B2B2FF","u"="#7A7AFF","t"="#0000E6"),
-    labels = c("TCP_SENDFILE","UDP_STREAM","TCP_STREAM")) +
+    values = c("s"="#B2B2FF","t"="#7A7AFF","u"="#0000E6"),
+    labels = c("s"="TCP_SENDFILE","t"="TCP_STREAM","u"="UDP_STREAM")) +
   theme(legend.title=element_blank()) +
   expand_limits(x=0)
 ggsave("analysis/throughput.pdf",width=7,height=6)
@@ -28,29 +28,29 @@ ggsave("analysis/throughput.pdf",width=7,height=6)
 
 sr = as.numeric(read.csv("analysis/tcp_sendfile.util_recv.csv",header=F))
 ss = as.numeric(read.csv("analysis/tcp_sendfile.util_send.csv",header=F))
-ur = as.numeric(read.csv("analysis/udp_stream.util_recv.csv",header=F))
-us = as.numeric(read.csv("analysis/udp_stream.util_send.csv",header=F))
 ts = as.numeric(read.csv("analysis/tcp_stream.util_send.csv",header=F))
 tr = as.numeric(read.csv("analysis/tcp_stream.util_recv.csv",header=F))
+ur = as.numeric(read.csv("analysis/udp_stream.util_recv.csv",header=F))
+us = as.numeric(read.csv("analysis/udp_stream.util_send.csv",header=F))
 
 p <- ggplot() +
   stat_ecdf(data=data.frame(sr),aes(x=sr,colour="sr")) +
   stat_ecdf(data=data.frame(ss),aes(x=ss,colour="ss")) +
-  stat_ecdf(data=data.frame(ur),aes(x=ur,colour="ur")) +
-  stat_ecdf(data=data.frame(us),aes(x=us,colour="us")) +
   stat_ecdf(data=data.frame(tr),aes(x=tr,colour="tr")) +
   stat_ecdf(data=data.frame(ts),aes(x=ts,colour="ts")) +
+  stat_ecdf(data=data.frame(ur),aes(x=ur,colour="ur")) +
+  stat_ecdf(data=data.frame(us),aes(x=us,colour="us")) +
   xlab("CPU Utilization (%)") +
   ylab("") +
   theme_bw() +
   scale_color_manual(
     name="",
     values = c("sr"="#B2B2FF","ss"="#0000E6",
-               "ur"="#D69999","us"="#7A0000",
-               "tr"="#84D179","ts"="#169905"),
-    labels = c("TCP_SENDFILE recv","TCP_SENDFILE send",
-               "UDP_STREAM recv","UDP_STREAM send",
-               "TCP_STREAM recv","TCP_STREAM send")) +
+               "tr"="#84D179","ts"="#169905",
+               "ur"="#D69999","us"="#7A0000"),
+    labels = c("sr"="TCP_SENDFILE recv","ss"="TCP_SENDFILE send",
+               "tr"="TCP_STREAM recv","ts"="TCP_STREAM send",
+               "ur"="UDP_STREAM recv","us"="UDP_STREAM send")) +
   theme(legend.title=element_blank()) +
   expand_limits(x=0)
 ggsave("analysis/cpu.pdf",width=7,height=6)
