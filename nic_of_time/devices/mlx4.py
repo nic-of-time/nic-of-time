@@ -1,14 +1,12 @@
 from itertools import combinations
+from subprocess import Popen,PIPE
 
 class Mlx4:
     def __init__(self,interface_name):
+        self.interface_name = interface_name
         self.en_opts = None
         self.core_opts = None
 
-                # for j in range(0,len(mlx4enopts)+1):
-                #     for mlx4entups in combinations(mlx4enopts, j):
-                #         for k in range(0,len(mlx4coreopts)+1):
-                #             for mlx4coretups in combinations(mlx4coreopts, k):
     def get_combinations(self):
         en_c = []
         for i in range(0,len(self.en_opts)+1):
@@ -35,3 +33,19 @@ class Mlx4:
                 moduleOpts += ","
             moduleOpts = moduleOpts[:-1]
         return moduleOpts
+
+    def init(self,opts,module_opt_str):
+        print("  + Initializing mlx4")
+        for node in opts.nodes:
+            cmd = ["ssh", node.external_address,
+                   "sudo {}/mlx4.sh {} \"{}\"".format(
+                       opts.remote_config_scripts_dir,
+                       opts.device.interface_name,
+                       module_opt_str)]
+            p = Popen(cmd,stdout=PIPE,stderr=PIPE)
+            out = p.communicate()
+            if p.returncode != 0:
+                print(cmd)
+                print(out)
+                return p.returncode
+        return 0

@@ -17,7 +17,7 @@ if not args.drive and not args.plot:
     args.drive = args.plot = True
 
 opts = nt.Options() # nic-of-time options.
-opts.nodes = [nt.Node('s-h0',internal_address="10.1.1.2",server=True),
+opts.nodes = [nt.Node('s-h0',internal_address="10.1.1.2",is_server=True),
               nt.Node('s-h1',internal_address="10.1.1.3")]
 
 opts.txqueuelen = 10000 # Length of the transmit queue.
@@ -52,21 +52,25 @@ opts.device.core_opts = [
 # iperf-specific options.
 num_iperf_procs = 8
 time_secs = 15
+opts.timeout_seconds = time_secs+2
+opts.sleep_after_server_seconds = 10
 server_address = opts.nodes[0].internal_address
 
 for num_clients in {1,2,4}:
     # iperf TCP
-    opts.commands = [[] for x in range(len(opts.nodes))]
+    opts.nodes[0].commands = []
+    opts.nodes[1].commands = []
     for cpu in range(1,2*num_iperf_procs+1,2):
-        opts.commands[0].append(
-            "iperf3 -s -J -f M -i 1 -p 520{} -A {} -D".format(cpu,cpu))
-        opts.commands[1].append(
+        port = 5200+cpu
+        opts.nodes[0].commands.append(
+            "iperf3 -s -J -f M -i 1 -p {} -A {} -D".format(port,cpu))
+        opts.nodes[1].commands.append(
             ("iperf3 -c {} -J -P {} --time {} -i 1 -f M " +
-             "-p 520{} --get-server-output -M 8960 -w 256K -l 256K").format(
-                 server_address,num_clients,time_secs,cpu))
-    opts.data_output_dir = "iperf/tcp/{}/{}/data".format(
+             "-p {} --get-server-output -M 8960 -w 256K -l 256K").format(
+                 server_address,num_clients,time_secs,port))
+    opts.data_output_dir = "iperf/tcp/{}-procs/{}-clients/data".format(
         num_iperf_procs,num_clients)
-    opts.plot_output_dir = "iperf/tcp/{}/{}/plots".format(
+    opts.plot_output_dir = "iperf/tcp/{}-procs/{}-clients/plots".format(
         num_iperf_procs,num_clients)
     if args.drive:
         nt.drive_experiment(opts)
@@ -74,17 +78,19 @@ for num_clients in {1,2,4}:
         nt.plot(opts)
 
     # iperf UDP
-    opts.commands = [[] for x in range(len(opts.nodes))]
+    opts.nodes[0].commands = []
+    opts.nodes[1].commands = []
     for cpu in range(1,2*num_iperf_procs+1,2):
-        opts.commands[0].append(
-            "iperf3 -s -J -f M -i 1 -p 520{} -A {} -D".format(cpu,cpu))
-        opts.commands[1].append(
+        port = 5200+cpu
+        opts.nodes[0].commands.append(
+            "iperf3 -s -J -f M -i 1 -p {} -A {} -D".format(port,cpu))
+        opts.nodes[1].commands.append(
             ("iperf3 -c {} -u -J -b 0 -P {} --time {} -i 1 -f M " +
-             "-p 520{} --get-server-output -l 8K").format(
-                 server_address,num_clients,time_secs,num_clients))
-    opts.data_output_dir = "iperf/udp/{}/{}/data".format(
+             "-p {} --get-server-output -l 8K").format(
+                 server_address,num_clients,time_secs,port))
+    opts.data_output_dir = "iperf/udp/{}-procs/{}-clients/data".format(
         num_iperf_procs,num_clients)
-    opts.plot_output_dir = "iperf/udp/{}/{}/plots".format(
+    opts.plot_output_dir = "iperf/udp/{}-procs/{}-clients/plots".format(
         num_iperf_procs,num_clients)
     if args.drive:
         nt.drive_experiment(opts)

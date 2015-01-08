@@ -4,16 +4,13 @@
 # sets ethtool options the ethernet device.
 
 die() { echo $*; exit -1; }
-[[ $# == 4 ]] || \
-  die "Usage: $0 <ethernet device> <ethtool options> <mtu> <tx>"
+[[ $# == 5 ]] || \
+  die "Usage: $0 <ethernet device> <ethtool options> <mtu> <tx> <ip>"
 DEVICE=$1
 ETHTOOL_OPTS=$2
 MTU=$3
 TX=$4
-
-echo "config-offload-options running on $HOSTNAME"
-echo "$DEVICE $ETHTOOL_OPTS $MTU $TX"
-exit 0
+SERVER_IP=$5
 
 ifconfig $DEVICE up
 ifconfig $DEVICE mtu $MTU
