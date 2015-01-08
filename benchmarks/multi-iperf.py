@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
+
+sys.path.append("..")
 import nic_of_time as nt
+import nic_of_time.result_parsers.iperf
+import nic_of_time.devices.mlx4
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--drive",action='store_true')
@@ -11,78 +16,77 @@ args = parser.parse_args()
 if not args.drive and not args.plot:
     args.drive = args.plot = True
 
-# nic-of-time library options.
-opts = nt.options()
-opts.server_external='derecho.elijah.cs.cmu.edu'
-opts.client_external='derecho.elijah.cs.cmu.edu'
-opts.server_internal=opts.server_external
-opts.client_internal=opts.server_internal
-opts.tx = 10000
-opts.mtu = 9000
+opts = nt.Options() # nic-of-time options.
+opts.nodes = [nt.Node('s-h0',internal_address="10.1.1.2",server=True),
+              nt.Node('s-h1',internal_address="10.1.1.3")]
 
-opts.results = nc.result_parsers.iperf
+opts.txqueuelen = 10000 # Length of the transmit queue.
+opts.mtu = 9000 # Maximum transmission unit.
+
+opts.result_parser = nt.result_parsers.iperf
 opts.kill_cmd = 'pkill iperf'
 
 opts.output_stdout = True # Archive stdout from all commands.
-opts.output_files.server = [] # Files on the server to archive.
-opts.output_files.client = [] # Files on the client to archive.
+opts.output_files = [[],[]] # Files to archive.
 
+# Iterate through combinations of these ethtool options.
 opts.ethtool_opts = [
-	['rx-checksumming','rx'],
-	['tx-checksumming','tx'],
-	['scatter-gather','sg'],
-	['tcp-segmentation-offload','tso'],
-	['generic-segmentation-offload','gso'],
-	['generic-receive-offload','gro'],
-#	['rx-vlan-offload','rxvlan'],
-#	['tx-vlan-offload','txvlan'],
-	['receive-hashing','rxhash']
+    ['rx-checksumming','rx'],
+    ['tx-checksumming','tx'],
+    ['scatter-gather','sg'],
+    ['tcp-segmentation-offload','tso'],
+    ['generic-segmentation-offload','gso'],
+    ['generic-receive-offload','gro'],
+    #['rx-vlan-offload','rxvlan'],
+    #['tx-vlan-offload','txvlan'],
+    ['receive-hashing','rxhash']
 ]
-opts.ethernet_device = "fge0"
-opts.ethernet_device_model = nt.devices.mlx4
-opts.mlx4EnOpts = [
-	['udp-rss','udp_rss','1']
+opts.device = nt.devices.mlx4.Mlx4("fge0")
+opts.device.en_opts = [
+    ['udp-rss','udp_rss','1']
 ]
-opts.mlx4CoreOpts = [
-  ['flow-steering','log_num_mgm_entry_size','-1']
+opts.device.core_opts = [
+    ['flow-steering','log_num_mgm_entry_size','-1']
 ]
 
 # iperf-specific options.
 num_iperf_procs = 8
 time_secs = 15
+server_address = opts.nodes[0].internal_address
 
 for num_clients in {1,2,4}:
     # iperf TCP
-    opts.server_commands = []
-    opts.client_commands = []
+    opts.commands = [[] for x in range(len(opts.nodes))]
     for cpu in range(1,2*num_iperf_procs+1,2):
-        opts.server_commands.append(
+        opts.commands[0].append(
             "iperf3 -s -J -f M -i 1 -p 520{} -A {} -D".format(cpu,cpu))
-        opts.client_commands.append(
+        opts.commands[1].append(
             ("iperf3 -c {} -J -P {} --time {} -i 1 -f M " +
              "-p 520{} --get-server-output -M 8960 -w 256K -l 256K").format(
-                 server,num_clients))
-    opts.data_output_dir = "iperf/tcp/{}/{}".format(num_iperf_procs,num_clients)
-    opts.plot_output_dir = "iperf/tcp/{}/{}".format(num_iperf_procs,num_clients)
+                 server_address,num_clients,time_secs,cpu))
+    opts.data_output_dir = "iperf/tcp/{}/{}/data".format(
+        num_iperf_procs,num_clients)
+    opts.plot_output_dir = "iperf/tcp/{}/{}/plots".format(
+        num_iperf_procs,num_clients)
     if args.drive:
         nt.drive_experiment(opts)
     if args.plot:
         nt.plot(opts)
 
     # iperf UDP
-    opts.server_commands = []
-    opts.client_commands = []
+    opts.commands = [[] for x in range(len(opts.nodes))]
     for cpu in range(1,2*num_iperf_procs+1,2):
-        opts.server_commands.append(
+        opts.commands[0].append(
             "iperf3 -s -J -f M -i 1 -p 520{} -A {} -D".format(cpu,cpu))
-        opts.client_commands.append(
+        opts.commands[1].append(
             ("iperf3 -c {} -u -J -b 0 -P {} --time {} -i 1 -f M " +
              "-p 520{} --get-server-output -l 8K").format(
-                 server,time_secs,num_clients))
-    opts.data_output_dir = "iperf/udp/{}/{}".format(num_iperf_procs,num_clients)
-    opts.plot_output_dir = "iperf/udp/{}/{}".format(num_iperf_procs,num_clients)
+                 server_address,num_clients,time_secs,num_clients))
+    opts.data_output_dir = "iperf/udp/{}/{}/data".format(
+        num_iperf_procs,num_clients)
+    opts.plot_output_dir = "iperf/udp/{}/{}/plots".format(
+        num_iperf_procs,num_clients)
     if args.drive:
         nt.drive_experiment(opts)
     if args.plot:
         nt.plot(opts)
-        nt.plot_slice(opts)
