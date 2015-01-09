@@ -9,11 +9,12 @@ from nic_of_time.helper import mkdir_p
 def sync_config(opts):
     print("  + Syncing config")
     for node in opts.nodes:
-        p = Popen(["scp", "-r",
-                   opts.local_config_scripts_dir+"/.",
-                   "{}:{}/".format(node.external_address,
-                                  opts.remote_config_scripts_dir)],
-                  stdout=PIPE,stderr=PIPE)
+        cmd = ["scp", "-r",
+               opts.local_config_scripts_dir+"/.",
+               "{}:{}/".format(node.external_address,
+                               opts.remote_config_scripts_dir)]
+        print("    + {}".format(" ".join(cmd)))
+        p = Popen(cmd,stdout=PIPE,stderr=PIPE)
         out = p.communicate()
         if p.returncode != 0:
             print(out)
@@ -163,8 +164,13 @@ def run(opts):
     start_time_secs = time.time()
     total_exps = len(all_combinations)
     for tup in all_combinations:
-        mkdir_p("{}/{}".format(opts.data_output_dir,exp_num))
-        with open("{}/{}/options.txt".format(opts.data_output_dir,exp_num),'w') as f:
+        exp_dir = "{}/{}".format(opts.data_output_dir,exp_num)
+        if opts.resume:
+            if os.path.isdir(exp_dir):
+                exp_num += 1
+                continue
+        mkdir_p(exp_dir)
+        with open("{}/options.txt".format(exp_dir),'w') as f:
             f.write("{}\n".format(tup))
 
         eth_opts = tup[0]

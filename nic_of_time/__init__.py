@@ -5,6 +5,7 @@ import nic_of_time.driver
 class Options:
     def __init__(self):
         self.nodes = None
+        self.resume = False
         self.txqueuelen = None
         self.mtu = None
 

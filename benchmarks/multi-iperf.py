@@ -17,6 +17,7 @@ if not args.drive and not args.plot:
     args.drive = args.plot = True
 
 opts = nt.Options() # nic-of-time options.
+opts.resume = True # Resume the experiment from an intermediate data state.
 opts.nodes = [nt.Node('s-h0',internal_address="10.1.1.2",is_server=True),
               nt.Node('s-h1',internal_address="10.1.1.3")]
 
