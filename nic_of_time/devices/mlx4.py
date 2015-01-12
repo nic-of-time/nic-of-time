@@ -49,3 +49,8 @@ class Mlx4:
                 print(out)
                 return p.returncode
         return 0
+
+    def get_exp_opts(self,exp_dir):
+        with open(exp_dir+"/options.txt","r") as f:
+            opts = eval(f.readline())
+        return (opts[1], opts[2])

@@ -1,6 +1,7 @@
 import os
 
 import nic_of_time.driver
+import nic_of_time.analyzer
 
 class Options:
     def __init__(self):
@@ -22,12 +23,15 @@ class Options:
         self.ethtool_opts = None
         self.device = None
 
-        self.data_output_dir = None
-        self.plot_output_dir = None
+        self.data_dir = None
+        self.analysis_dir = None
+        self.plot_dir = None
 
         mod_dir = os.path.dirname(os.path.realpath(__file__))
         self.local_config_scripts_dir = mod_dir+"/config-scripts"
         self.remote_config_scripts_dir = "/tmp/nic-of-time-config-scripts"
+
+        self.analyses = None
 
 class Node:
     def __init__(self,external_address,internal_address=None,is_server=False):
@@ -38,8 +42,20 @@ class Node:
         self.is_server = is_server
         self.commands = []
 
+class Analysis:
+    def __init__(self,exp_func,sort_by_key,output_dir,plot=True,reverse_sort=True,header_func=None):
+        self.exp_func = exp_func
+        self.sort_by_key = sort_by_key
+        self.output_dir = output_dir
+        self.plot = plot
+        self.reverse_sort = reverse_sort
+        self.header_func = header_func
+
 def drive_experiment(opts):
     driver.run(opts)
 
+def analyze(opts):
+    analyzer.run(opts)
+
 def plot(opts):
-    print("plot")
+    plotter.run(opts)

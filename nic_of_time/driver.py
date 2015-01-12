@@ -70,7 +70,7 @@ def runExp(opts,exp_num,eth_opt_tups,dev_opts):
             p = Popen(cmd,stdout=PIPE,stderr=PIPE)
             p.communicate()
 
-    eth_log_fname = "{}/{}/ethtool.log".format(opts.data_output_dir,exp_num)
+    eth_log_fname = "{}/{}/ethtool.log".format(opts.data_dir,exp_num)
     err = opts.device.init(opts,dev_opts)
     if err != 0: return err
     err = init_ethtool(opts,eth_opt_str,eth_log_fname)
@@ -84,11 +84,11 @@ def runExp(opts,exp_num,eth_opt_tups,dev_opts):
         procs = []
         for cmd in server_node.commands:
             print("      + {}".format(cmd))
-            f_out = open("{}/{}/{}-{}-stdout".format(opts.data_output_dir,
+            f_out = open("{}/{}/{}-{}-stdout".format(opts.data_dir,
                                                      exp_num,
                                                      server_node.external_address,
                                                      len(procs)),"w")
-            f_err = open("{}/{}/{}-{}-stderr".format(opts.data_output_dir,
+            f_err = open("{}/{}/{}-{}-stderr".format(opts.data_dir,
                                                      exp_num,
                                                      server_node.external_address,
                                                      len(procs)),"w")
@@ -110,11 +110,11 @@ def runExp(opts,exp_num,eth_opt_tups,dev_opts):
         procs = []
         for cmd in client_node.commands:
             print("      + {}".format(cmd))
-            f_out = open("{}/{}/{}-{}-stdout".format(opts.data_output_dir,
+            f_out = open("{}/{}/{}-{}-stdout".format(opts.data_dir,
                                                      exp_num,
                                                      client_node.external_address,
                                                      len(procs)),"w")
-            f_err = open("{}/{}/{}-{}-stderr".format(opts.data_output_dir,
+            f_err = open("{}/{}/{}-{}-stderr".format(opts.data_dir,
                                                      exp_num,
                                                      client_node.external_address,
                                                      len(procs)),"w")
@@ -148,14 +148,14 @@ def get_ethtool_combinations(opts):
     return c
 
 def run(opts):
-    mkdir_p(opts.data_output_dir)
+    mkdir_p(opts.data_dir)
 
     err  = sync_config(opts)
     if err != 0:
         raise Exception("Unable to synchronize config scripts.")
 
     exp_num = 1
-    err_f = open(opts.data_output_dir+"/error-combinations.txt",'w')
+    err_f = open(opts.data_dir+"/error-combinations.txt",'w')
     opt_combinations = [get_ethtool_combinations(opts)] + \
                        opts.device.get_combinations()
     all_combinations = list(product(*opt_combinations))
@@ -164,7 +164,7 @@ def run(opts):
     start_time_secs = time.time()
     total_exps = len(all_combinations)
     for tup in all_combinations:
-        exp_dir = "{}/{}".format(opts.data_output_dir,exp_num)
+        exp_dir = "{}/{}".format(opts.data_dir,exp_num)
         if opts.resume:
             if os.path.isdir(exp_dir):
                 exp_num += 1

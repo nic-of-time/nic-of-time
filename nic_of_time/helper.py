@@ -1,4 +1,6 @@
-import os, errno
+import errno
+import itertools
+import os
 
 def mkdir_p(path):
     try:
