@@ -134,5 +134,5 @@ nt.plot.grouped_bars(
     stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
     ylabel = "Bandwidth (Gbps)",
     xlabel = "Number of Parallel Connections",
-    output_files = ["udp.bars.png","tcp.bars.pdf"]
+    output_files = ["udp.bars.png","udp.bars.pdf"]
 )
