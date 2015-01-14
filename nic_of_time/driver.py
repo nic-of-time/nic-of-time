@@ -9,12 +9,12 @@ from nic_of_time.helper import mkdir_p
 def sync_config(opts):
     print("  + Syncing config")
     for node in opts.nodes:
-        cmd = ["scp", "-r",
+        cmd = ["scp", "-v", "-r",
                opts.local_config_scripts_dir+"/.",
                "{}:{}/".format(node.external_address,
                                opts.remote_config_scripts_dir)]
         print("    + {}".format(" ".join(cmd)))
-        p = Popen(cmd,stdout=PIPE,stderr=PIPE)
+        p = Popen(cmd)
         out = p.communicate()
         if p.returncode != 0:
             print(out)
@@ -167,15 +167,26 @@ def run(opts):
         exp_dir = "{}/{}".format(opts.data_dir,exp_num)
         if opts.resume:
             if os.path.isdir(exp_dir):
-                exp_num += 1
-                continue
+                if opts.result_parser(exp_num,opts.data_dir+"/"+str(exp_num),opts).is_valid:
+                    print("Experiment {} exists and has valid data, skipping.".format(exp_num))
+                    exp_num += 1
+                    continue
         mkdir_p(exp_dir)
         with open("{}/options.txt".format(exp_dir),'w') as f:
             f.write("{}\n".format(tup))
 
         eth_opts = tup[0]
         dev_opts = tup[1:]
-        err = runExp(opts,exp_num,eth_opts,dev_opts)
+
+        for i in range(opts.retry):
+            print("  + Trying experiment: {} of {}.".format(i,opts.retry))
+            err = runExp(opts,exp_num,eth_opts,dev_opts)
+            if err == 0:
+                print("  + Passed.")
+                break
+            else:
+                print("  + Failed.")
+
         if err != 0:
             err_f.write("{}: {}".format(exp_num,tup))
             err_f.write("\n")
