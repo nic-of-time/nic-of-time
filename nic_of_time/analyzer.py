@@ -23,11 +23,26 @@ def get_valid_experiments(opts):
 def run(opts):
     print("Analyzing data.")
     exps = get_valid_experiments(opts)
+    if len(exps) == 0:
+        return
 
     for analysis in opts.analyses:
         responses = []
+        no_opts_exp_idx = None
+        all_opts_exp_idx = None
         for exp in exps:
             responses.append((analysis.exp_func(exp),exp))
+            if len(exp.ethtool.opts['enabled']) == 0 and opts.device.is_none(exp.device_opts):
+                no_opts_exp_idx = len(responses)-1
+            if len(exp.ethtool.opts['enabled']) == len(opts.ethtool_opts) \
+               and opts.device.is_all(exp.device_opts):
+                all_opts_exp_idx = len(responses)-1
+
+        if not no_opts_exp_idx:
+            raise Exception("Error: Unable to find experiment with no options enabled.")
+        if not all_opts_exp_idx:
+            raise Exception("Error: Unable to find experiment with all options enabled.")
+
         sorted_responses = sorted(responses,
                                   key=lambda x: x[0][analysis.sort_by_key],
                                   reverse=analysis.reverse_sort)
@@ -44,6 +59,9 @@ def run(opts):
                 f.write("  + Module Opts: {}\n".format(exp.device_opts))
                 for k,v in sorted(response.items()):
                     f.write("  + {}: {}\n".format(k,v))
+
         with open(out+"/"+analysis.sort_by_key+".csv","w") as f:
             f.write(",".join([str(x[0][analysis.sort_by_key]) for x in responses]))
             f.write("\n")
+            f.write("{}\n".format(responses[no_opts_exp_idx][0][analysis.sort_by_key]))
+            f.write("{}\n".format(responses[all_opts_exp_idx][0][analysis.sort_by_key]))

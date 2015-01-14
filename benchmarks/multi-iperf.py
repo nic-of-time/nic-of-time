@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import copy
 import sys
 
 sys.path.append("..")
 import nic_of_time as nt
 import nic_of_time.result_parsers.iperf
 import nic_of_time.devices.mlx4
+import nic_of_time.plot
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--drive",action='store_true')
@@ -16,8 +18,6 @@ args = parser.parse_args()
 
 if not args.drive and not args.analyze and not args.plot:
     args.drive = args.analyze = args.plot = True
-if args.plot:
-    args.analyze = True
 
 opts = nt.Options() # nic-of-time options.
 opts.resume = True # Resume the experiment from an intermediate data state.
@@ -63,16 +63,17 @@ server_address = opts.nodes[0].internal_address
 opts.analyses = [
     nt.Analysis(lambda exp: exp.get_bandwidth_gbps(padding_seconds=2),
                 output_dir = "bw",
-                plot = True,
                 sort_by_key = 'mean',
                 header_func = lambda bw: "{} ({})".format(bw['mean'],bw['stdev'])),
     nt.Analysis(lambda exp: exp.get_cpu(),
                 output_dir = "cpu",
-                plot = True,
                 sort_by_key = 'host_mean',
                 header_func = None)
 ]
+opts.plot_dir = "iperf/plot"
 
+tcp_data = {}
+udp_data = {}
 for num_clients in {1,2,4}:
     # iperf TCP
     opts.nodes[0].commands = []
@@ -88,13 +89,11 @@ for num_clients in {1,2,4}:
     prefix = "iperf/tcp/{}-procs/{}-clients".format(num_iperf_procs,num_clients)
     opts.data_dir = prefix + "/data"
     opts.analysis_dir = prefix + "/analysis"
-    opts.plot_dir = prefix + "/plot"
     if args.drive:
         nt.drive_experiment(opts)
     if args.analyze:
         nt.analyze(opts)
-    if args.plot:
-        nt.plot(opts)
+    tcp_data[num_clients] = copy.deepcopy(opts)
 
     # iperf UDP
     opts.nodes[0].commands = []
@@ -110,10 +109,30 @@ for num_clients in {1,2,4}:
     prefix = "iperf/udp/{}-procs/{}-clients".format(num_iperf_procs,num_clients)
     opts.data_dir = prefix + "/data"
     opts.analysis_dir = prefix + "/analysis"
-    opts.plot_dir = prefix + "/plot"
     if args.drive:
         nt.drive_experiment(opts)
     if args.analyze:
         nt.analyze(opts)
-    if args.plot:
-        nt.plot(opts)
+    udp_data[num_clients] = copy.deepcopy(opts)
+
+nt.plot.grouped_bars(
+    opts = [tcp_data[1], tcp_data[2], tcp_data[4]],
+    analyses = ["bw/mean.csv"]*3,
+    data_labels = ["1 Parallel", "2 Parallel", "4 Parallel"],
+    stats = ["Min","None","All","Max"],
+    stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+    ylabel = "Bandwidth (Gbps)",
+    xlabel = "Number of Parallel Connections",
+    output_files = ["tcp.bars.png","tcp.bars.pdf"]
+)
+
+nt.plot.grouped_bars(
+    opts = [udp_data[1], udp_data[2], udp_data[4]],
+    analyses = ["bw/mean.csv"]*3,
+    data_labels = ["1 Parallel", "2 Parallel", "4 Parallel"],
+    stats = ["Min","None","All","Max"],
+    stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+    ylabel = "Bandwidth (Gbps)",
+    xlabel = "Number of Parallel Connections",
+    output_files = ["udp.bars.png","tcp.bars.pdf"]
+)

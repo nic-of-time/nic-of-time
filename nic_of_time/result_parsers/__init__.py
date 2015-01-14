@@ -4,7 +4,7 @@ import re
 from nic_of_time.helper import grouper
 
 class EthtoolOpts:
-    def __init__(self,ethtool_opts_file):
+    def __init__(self,ethtool_opts_file,opts):
         if not os.path.isfile(ethtool_opts_file):
             self.is_valid = False
             return
@@ -24,10 +24,11 @@ class EthtoolOpts:
                 if r:
                     opt = r.group(1)
                     status = r.group(2)
-                    if status == "on":
-                        node_opts['enabled'].append(opt)
-                    elif status == "off":
-                        node_opts['disabled'].append(opt)
+                    if any([opt == tup[0] for tup in opts.ethtool_opts]):
+                        if status == "on":
+                            node_opts['enabled'].append(opt)
+                        elif status == "off":
+                            node_opts['disabled'].append(opt)
             self.all_opts[node] = node_opts
 
         reference_ethtool_node = None

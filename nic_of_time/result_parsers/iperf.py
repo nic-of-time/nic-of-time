@@ -11,7 +11,7 @@ class IperfRun:
     def __init__(self,exp_num,path,opts):
         self.exp_num = exp_num
         self.path = path
-        self.ethtool = nt.result_parsers.EthtoolOpts(path+"/ethtool.log")
+        self.ethtool = nt.result_parsers.EthtoolOpts(path+"/ethtool.log",opts)
         if not self.ethtool.is_valid:
             self.is_valid = False
             return

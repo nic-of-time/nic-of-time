@@ -54,3 +54,13 @@ class Mlx4:
         with open(exp_dir+"/options.txt","r") as f:
             opts = eval(f.readline())
         return (opts[1], opts[2])
+
+    def is_none(self,dev_opts):
+        en_opts,core_opts = dev_opts
+        return len(en_opts) == 0 \
+            and len(core_opts) == 0
+
+    def is_all(self,dev_opts):
+        en_opts,core_opts = dev_opts
+        return len(en_opts) == len(self.en_opts) \
+            and len(core_opts) == len(self.core_opts)
