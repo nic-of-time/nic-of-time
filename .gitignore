@@ -1,2 +1,5 @@
 __pycache__
 benchmarks/iperf
+benchmarks/ab
+benchmarks/ycsb
+benchmarks/*.out

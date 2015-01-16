@@ -138,8 +138,9 @@ def runExp(opts,exp_num,eth_opt_tups,dev_opts):
     print("  + Killing all processes.")
     for node_procs in server_procs + client_procs:
         for proc in node_procs:
-            if proc.poll() != 0:
+            try:
                 proc.terminate()
+            except: pass
     time.sleep(1)
 
     for f in fds:
