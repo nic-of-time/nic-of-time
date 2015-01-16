@@ -129,11 +129,17 @@ def runExp(opts,exp_num,eth_opt_tups,dev_opts):
     if opts.timeout_seconds:
         print("  + Sleeping for {} seconds.".format(opts.timeout_seconds))
         time.sleep(opts.timeout_seconds)
+    else:
+        print("  + Waiting for client commands to return.")
+        for node_procs in client_procs:
+            for proc in node_procs:
+                proc.wait()
 
     print("  + Killing all processes.")
     for node_procs in server_procs + client_procs:
         for proc in node_procs:
-            proc.terminate()
+            if proc.poll() != 0:
+                proc.terminate()
     time.sleep(1)
 
     for f in fds:
