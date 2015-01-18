@@ -1,5 +1,6 @@
 from itertools import combinations,product
 import os
+import re
 from subprocess import Popen,PIPE
 import sys
 import time
@@ -157,44 +158,59 @@ def get_ethtool_combinations(opts):
 def run(opts):
     mkdir_p(opts.data_dir)
 
-    err  = sync_config(opts)
+    #err  = sync_config(opts)
+    err = 0 #TODO
     if err != 0:
         raise Exception("Unable to synchronize config scripts.")
 
-    exp_num = 1
+    err_fname = opts.data_dir+"/error-combinations.txt"
+    known_errors = []
+    if opts.resume and os.path.isfile(err_fname):
+        print(err_fname)
+        with open(err_fname,"r") as f:
+            for line in f.readlines():
+                r = re.search("^(\d*):",line)
+                if not r:
+                    raise Exception("Unexpected error file format.")
+                known_errors.append(int(r.group(1)))
     err_f = open(opts.data_dir+"/error-combinations.txt",'w')
+
     opt_combinations = [get_ethtool_combinations(opts)] + \
                        opts.device.get_combinations()
     all_combinations = list(product(*opt_combinations))
+
     exp_num = 1
 
     start_time_secs = time.time()
     total_exps = len(all_combinations)
     for tup in all_combinations:
         exp_dir = "{}/{}".format(opts.data_dir,exp_num)
-        if opts.resume:
-            if os.path.isdir(exp_dir):
-                if opts.result_parser(exp_num,opts.data_dir+"/"+str(exp_num),opts).is_valid:
-                    print("Experiment {} exists and has valid data, skipping.".format(exp_num))
-                    exp_num += 1
-                    continue
-        mkdir_p(exp_dir)
-        with open("{}/options.txt".format(exp_dir),'w') as f:
-            f.write("{}\n".format(tup))
+        if exp_num not in known_errors:
+            if opts.resume:
+                if os.path.isdir(exp_dir):
+                    if opts.result_parser(exp_num,opts.data_dir+"/"+str(exp_num),opts).is_valid:
+                        print("Experiment {} exists and has valid data, skipping.".format(exp_num))
+                        exp_num += 1
+                        continue
+            mkdir_p(exp_dir)
+            with open("{}/options.txt".format(exp_dir),'w') as f:
+                f.write("{}\n".format(tup))
 
-        eth_opts = tup[0]
-        dev_opts = tup[1:]
+            eth_opts = tup[0]
+            dev_opts = tup[1:]
 
-        for i in range(opts.retry):
-            print("  + Trying experiment: {} of {}.".format(i,opts.retry))
-            err = runExp(opts,exp_num,eth_opts,dev_opts)
-            if err == 0:
-                print("  + Passed.")
-                break
-            else:
-                print("  + Failed.")
+            for i in range(opts.retry):
+                print("  + Trying experiment: {} of {}.".format(i,opts.retry))
+                err = runExp(opts,exp_num,eth_opts,dev_opts)
+                if err == 0:
+                    print("  + Passed.")
+                    break
+                else:
+                    print("  + Failed.")
+        else:
+            print("Experiment {} is a known error.".format(exp_num))
 
-        if err != 0:
+        if err != 0 or exp_num in known_errors:
             err_f.write("{}: {}".format(exp_num,tup))
             err_f.write("\n")
             err_f.flush()
