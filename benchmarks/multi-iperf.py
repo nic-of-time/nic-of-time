@@ -63,12 +63,16 @@ server_address = opts.nodes[0].internal_address
 
 opts.analyses = [
     nt.Analysis(lambda exp: exp.get_bandwidth_gbps(padding_seconds=2),
-                output_dir = "bw",
-                sort_by_key = 'mean',
-                header_func = lambda bw: "{} ({})".format(bw['mean'],bw['stdev'])),
+            output_dir = "bw",
+            sort_by_key = 'mean',
+            header_func = lambda bw: "{} ({})".format(bw['mean'],bw['stdev'])),
     nt.Analysis(lambda exp: exp.get_cpu(),
                 output_dir = "cpu",
                 sort_by_key = 'host_mean',
+                header_func = None),
+    nt.Analysis(lambda exp: exp.get_cpu(),
+                output_dir = "cpu",
+                sort_by_key = 'remote_mean',
                 header_func = None)
 ]
 opts.plot_dir = "iperf/plot"
@@ -150,4 +154,24 @@ if args.plot:
         # "#B2B2FF","#7A7AFF","#0000E6","#D69999","#AD3333","#7A0000"
         xlabel = "Bandwidth (Gbps)",
         output_files = ["bw.cdf.png","bw.cdf.pdf"]
+    )
+
+    nt.plot.cdf(
+        opts = [tcp_data[1], tcp_data[1]], #TODO
+        analyses = ["cpu/remote_mean.csv","cpu/host_mean.csv"],
+        data_labels = ["Remote: 1 Parallel", "Host: 1 Parallel"],
+        colors = ["#B2B2FF","#D69999"],
+        # "#B2B2FF","#7A7AFF","#0000E6","#D69999","#AD3333","#7A0000"
+        xlabel = "CPU Utilization",
+        output_files = ["tcp.cpu.cdf.png","tcp.cpu.cdf.pdf"]
+    )
+
+    nt.plot.cdf(
+        opts = [udp_data[1], udp_data[1]], #TODO
+        analyses = ["cpu/remote_mean.csv","cpu/host_mean.csv"],
+        data_labels = ["Remote: 1 Parallel", "Host: 1 Parallel"],
+        colors = ["#B2B2FF","#D69999"],
+        # "#B2B2FF","#7A7AFF","#0000E6","#D69999","#AD3333","#7A0000"
+        xlabel = "CPU Utilization",
+        output_files = ["udp.cpu.cdf.png","udp.cpu.cdf.pdf"]
     )
