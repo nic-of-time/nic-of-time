@@ -117,34 +117,37 @@ for num_clients in {1,2,4}:
     udp_data[num_clients] = copy.deepcopy(opts)
 
 if args.plot:
-    nt.plot.grouped_bars(
-        opts = [tcp_data[1], tcp_data[2], tcp_data[4]],
-        analyses = ["bw/mean.csv"]*3,
-        data_labels = ["1 Parallel", "2 Parallel", "4 Parallel"],
-        stats = ["Min","None","All","Max"],
-        stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
-        ylabel = "Bandwidth (Gbps)",
-        xlabel = "Number of Parallel Connections",
-        output_files = ["bw.bars.tcp.png","bw.bars.tcp.pdf"]
-    )
+    # TODO
+    # nt.plot.grouped_bars(
+    #     opts = [tcp_data[1], tcp_data[2], tcp_data[4]],
+    #     analyses = ["bw/mean.csv"]*3,
+    #     data_labels = ["1 Parallel", "2 Parallel", "4 Parallel"],
+    #     stats = ["Min","None","All","Max"],
+    #     stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+    #     ylabel = "Bandwidth (Gbps)",
+    #     xlabel = "Number of Parallel Connections",
+    #     output_files = ["bw.bars.tcp.png","bw.bars.tcp.pdf"]
+    # )
 
-    nt.plot.grouped_bars(
-        opts = [udp_data[1], udp_data[2], udp_data[4]],
-        analyses = ["bw/mean.csv"]*3,
-        data_labels = ["1 Parallel", "2 Parallel", "4 Parallel"],
-        stats = ["Min","None","All","Max"],
-        stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
-        ylabel = "Bandwidth (Gbps)",
-        xlabel = "Number of Parallel Connections",
-        output_files = ["bw.bars.udp.png","bw.bars.udp.pdf"]
-    )
+    # nt.plot.grouped_bars(
+    #     opts = [udp_data[1], udp_data[2], udp_data[4]],
+    #     analyses = ["bw/mean.csv"]*3,
+    #     data_labels = ["1 Parallel", "2 Parallel", "4 Parallel"],
+    #     stats = ["Min","None","All","Max"],
+    #     stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+    #     ylabel = "Bandwidth (Gbps)",
+    #     xlabel = "Number of Parallel Connections",
+    #     output_files = ["bw.bars.udp.png","bw.bars.udp.pdf"]
+    # )
 
     nt.plot.cdf(
-        opts = [udp_data[1], udp_data[2], udp_data[4],
-                tcp_data[1], tcp_data[2], tcp_data[4]],
-        analyses = TODO,
-        data_labels = ["UDP: 1 Parallel", "UDP: 2 Parallel", "UDP: 4 Parallel",
-                    "TCP: 1 Parallel", "TCP: 2 Parallel", "TCP: 4 Parallel"],
+        opts = [udp_data[1], tcp_data[1]], #TODO
+        analyses = ["bw/mean.csv"]*2,
+        # data_labels = ["UDP: 1 Parallel", "UDP: 2 Parallel", "UDP: 4 Parallel",
+        #             "TCP: 1 Parallel", "TCP: 2 Parallel", "TCP: 4 Parallel"],
+        data_labels = ["UDP: 1 Parallel", "TCP: 1 Parallel"],
+        colors = ["#B2B2FF","#D69999"],
+        # "#B2B2FF","#7A7AFF","#0000E6","#D69999","#AD3333","#7A0000"
         xlabel = "Bandwidth (Gbps)",
         output_files = ["bw.cdf.png","bw.cdf.pdf"]
     )

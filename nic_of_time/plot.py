@@ -2,24 +2,14 @@ from subprocess import Popen,PIPE
 
 from nic_of_time.helper import mkdir_p
 
-# env = Environment(loader=FileSystemLoader("../templates")) # TODO
-
-# def run(opts):
-#     print("Plotting data.")
-
-#     for analysis in opts.analyses:
-#         analysis_out = opts.analysis_dir+"/"+analysis.output_dir
-#         with open("test.r","w") as f:
-#             f.write(env.get_template("ecdf.r").render(
-#                 csv_path = "../"+analysis.
-#                 x_label = analysis.sort_by_key,
-#                 output_location = analysis.sort_by_key+".pdf",
-#             ))
-
-def grouped_bars(opts, analyses, data_labels, stats, stat_colors, ylabel, xlabel, output_files):
+def grouped_bars(opts, analyses, data_labels, stats, stat_colors,
+                 ylabel, xlabel, output_files):
     print("Plotting: grouped_bars")
     mkdir_p(opts[0].plot_dir)
     all_stats = []
+    assert(len(opts) == len(analyses)) # TODO Exception
+    assert(len(opts) == len(data_labels)) # TODO Exception
+    assert(len(stats) == len(stat_colors)) # TODO Exception
     for idx,opt in enumerate(opts):
         with open(opt.analysis_dir + "/" + analyses[idx],"r") as f:
             opt_data = [float(x) for x in f.readline().split(",")]
@@ -45,6 +35,27 @@ def grouped_bars(opts, analyses, data_labels, stats, stat_colors, ylabel, xlabel
         ",".join(stats),
         ",".join(stat_colors),
         ylabel,
+        xlabel,
+        ",".join(opts[0].plot_dir+"/"+x for x in output_files)
+    ]
+    print("  + {}".format(" ".join(cmd)))
+    p = Popen(cmd)
+    p.communicate()
+    if p.returncode != 0:
+        raise Exception("Plot failed.")
+
+def cdf(opts, analyses, data_labels, colors, xlabel, output_files):
+    mkdir_p(opts[0].plot_dir)
+    in_files = []
+    assert(len(opts) == len(analyses)) # TODO Exception
+    assert(len(opts) == len(data_labels)) # TODO Exception
+    assert(len(opts) == len(colors)) # TODO Exception
+    for idx,opt in enumerate(opts):
+        in_files.append(opt.analysis_dir + "/" + analyses[idx])
+    cmd = [opts[0].r_dir+"/ecdf.r",
+        ",".join(in_files),
+        ",".join(data_labels),
+        ",".join(colors),
         xlabel,
         ",".join(opts[0].plot_dir+"/"+x for x in output_files)
     ]
