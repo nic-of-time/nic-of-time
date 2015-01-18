@@ -66,18 +66,21 @@ class IperfRun:
 
     def get_cpu(self):
         assert(self.is_valid)
-        host_cpu = []; remote_cpu = []
+        host_cpu = []; remote_cpu = []; combined_cpu = []
         for run in self.json_results:
           host_cpu.append(
             run['end']['cpu_utilization_percent']['host_total'])
           remote_cpu.append(
             run['end']['cpu_utilization_percent']['remote_total'])
+          combined_cpu.append(host_cpu[-1]+remote_cpu[-1])
         return {
             'host_mean': statistics.mean(host_cpu),
             'host_stdev': statistics.stdev(host_cpu),
             'host_max': max(host_cpu),
             'remote_mean': statistics.mean(remote_cpu),
             'remote_stdev': statistics.stdev(remote_cpu),
+            'combined_mean': statistics.mean(combined_cpu),
+            'combined_stdev': statistics.stdev(combined_cpu),
             'remote_max': max(remote_cpu),
             'host_raw': host_cpu,
             'remote_raw': remote_cpu

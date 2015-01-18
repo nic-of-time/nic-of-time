@@ -18,7 +18,6 @@ output_files <- parse_1d_str_args(args[5])
 in_data <- lapply(in_files, function(f) as.numeric(read.csv(f,header=F,nrow=1)))
 
 df <- transform(melt(in_data),L1=as.factor(L1))
-print(sapply(df,class))
 p <- ggplot(df, aes(x=value)) +
   stat_ecdf(aes(group=L1,colour=L1)) +
   scale_color_manual(

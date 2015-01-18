@@ -64,3 +64,23 @@ def cdf(opts, analyses, data_labels, colors, xlabel, output_files):
     p.communicate()
     if p.returncode != 0:
         raise Exception("Plot failed.")
+
+def scatter(opts, analyses, convex_hull, xlabel, ylabel, output_files):
+    mkdir_p(opts[0].plot_dir)
+    assert(len(opts) == 2) # TODO Exception
+    assert(len(opts) == len(analyses)) # TODO Exception
+    in_files = []
+    for idx,opt in enumerate(opts):
+        in_files.append(opt.analysis_dir + "/" + analyses[idx])
+    cmd = [opts[0].r_dir+"/scatter.r",
+        ",".join(in_files),
+        str(convex_hull),
+        xlabel,
+        ylabel,
+        ",".join(opts[0].plot_dir+"/"+x for x in output_files)
+    ]
+    print("  + {}".format(" ".join(cmd)))
+    p = Popen(cmd)
+    p.communicate()
+    if p.returncode != 0:
+        raise Exception("Plot failed.")

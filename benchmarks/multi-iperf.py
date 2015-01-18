@@ -73,6 +73,10 @@ opts.analyses = [
     nt.Analysis(lambda exp: exp.get_cpu(),
                 output_dir = "cpu",
                 sort_by_key = 'remote_mean',
+                header_func = None),
+    nt.Analysis(lambda exp: exp.get_cpu(),
+                output_dir = "cpu",
+                sort_by_key = 'combined_mean',
                 header_func = None)
 ]
 opts.plot_dir = "iperf/plot"
@@ -162,7 +166,7 @@ if args.plot:
         data_labels = ["Remote: 1 Parallel", "Host: 1 Parallel"],
         colors = ["#B2B2FF","#D69999"],
         # "#B2B2FF","#7A7AFF","#0000E6","#D69999","#AD3333","#7A0000"
-        xlabel = "CPU Utilization",
+        xlabel = "CPU Utilization (%)",
         output_files = ["tcp.cpu.cdf.png","tcp.cpu.cdf.pdf"]
     )
 
@@ -172,6 +176,29 @@ if args.plot:
         data_labels = ["Remote: 1 Parallel", "Host: 1 Parallel"],
         colors = ["#B2B2FF","#D69999"],
         # "#B2B2FF","#7A7AFF","#0000E6","#D69999","#AD3333","#7A0000"
-        xlabel = "CPU Utilization",
+        xlabel = "CPU Utilization (%)",
         output_files = ["udp.cpu.cdf.png","udp.cpu.cdf.pdf"]
     )
+
+
+    # TCP: average(remoteCPU,hostCPU). UDP: remoteCPU
+    for num_parallel in [1]: # TODO: 2,4
+        nt.plot.scatter(
+            opts = [tcp_data[num_parallel], tcp_data[num_parallel]],
+            analyses = ["cpu/combined_mean.csv", "bw/mean.csv"],
+            convex_hull = True,
+            xlabel = "CPU Utilization (%)",
+            ylabel = "Bandwidth (Gbps)",
+            output_files = ["tcp.cpu.bw.{}.png".format(num_parallel),
+                            "tcp.cpu.bw.{}.pdf".format(num_parallel)]
+        )
+
+        nt.plot.scatter(
+            opts = [udp_data[num_parallel], udp_data[num_parallel]],
+            analyses = ["cpu/remote_mean.csv", "bw/mean.csv"],
+            convex_hull = True,
+            xlabel = "CPU Utilization (%)",
+            ylabel = "Bandwidth (Gbps)",
+            output_files = ["udp.cpu.bw.{}.png".format(num_parallel),
+                            "udp.cpu.bw.{}.pdf".format(num_parallel)]
+        )
