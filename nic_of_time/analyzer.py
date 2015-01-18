@@ -39,9 +39,9 @@ def run(opts):
                 all_opts_exp_idx = len(responses)-1
 
         if not no_opts_exp_idx:
-            raise Exception("Error: Unable to find experiment with no options enabled.")
+            print("Warning: Unable to find experiment with no options enabled.")
         if not all_opts_exp_idx:
-            raise Exception("Error: Unable to find experiment with all options enabled.")
+            print("Warning: Unable to find experiment with all options enabled.")
 
         sorted_responses = sorted(responses,
                                   key=lambda x: x[0][analysis.sort_by_key],
@@ -63,5 +63,11 @@ def run(opts):
         with open(out+"/"+analysis.sort_by_key+".csv","w") as f:
             f.write(",".join([str(x[0][analysis.sort_by_key]) for x in responses]))
             f.write("\n")
-            f.write("{}\n".format(responses[no_opts_exp_idx][0][analysis.sort_by_key]))
-            f.write("{}\n".format(responses[all_opts_exp_idx][0][analysis.sort_by_key]))
+            if no_opts_exp_idx:
+                f.write("{}\n".format(responses[no_opts_exp_idx][0][analysis.sort_by_key]))
+            else:
+                f.write("0\n")
+            if all_opts_exp_idx:
+                f.write("{}\n".format(responses[all_opts_exp_idx][0][analysis.sort_by_key]))
+            else:
+                f.write("0\n")
