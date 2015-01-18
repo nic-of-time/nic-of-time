@@ -19,10 +19,11 @@ class AbRun:
         self.device_opts = opts.device.get_exp_opts(path)
 
         # TODO: Parse file.
-        with open("{}/{}-0-stdout".format(
-                path,opts.nodes[0].external_address),"r") as f:
-            for line in f.readlines():
-                if "Total transferred" in line:
-                    self.is_valid = True
-                    return
+        results_file = "{}/{}-0-stdout".format(path,opts.nodes[0].external_address)
+        if os.path.isfile(results_file):
+            with open(results_file,"r") as f:
+                for line in f.readlines():
+                    if "Total transferred" in line:
+                        self.is_valid = True
+                        return
         self.is_valid = False
