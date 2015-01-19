@@ -158,8 +158,7 @@ def get_ethtool_combinations(opts):
 def run(opts):
     mkdir_p(opts.data_dir)
 
-    #err  = sync_config(opts)
-    err = 0 #TODO
+    err  = sync_config(opts)
     if err != 0:
         raise Exception("Unable to synchronize config scripts.")
 
