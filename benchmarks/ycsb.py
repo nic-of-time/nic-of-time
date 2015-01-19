@@ -29,7 +29,7 @@ opts.txqueuelen = 10000 # Length of the transmit queue.
 opts.mtu = 9000 # Maximum transmission unit.
 
 opts.result_parser = nt.result_parsers.ycsb.YcsbRun
-opts.kill_cmd = 'pkill redis ycsb'
+opts.kill_cmd = 'sudo pkill redis; sudo pkill ycsb'
 
 opts.output_stdout = True # Archive stdout from all commands.
 opts.output_files = [[],[]] # Files to archive.
@@ -55,26 +55,23 @@ opts.device.core_opts = [
 ]
 
 opts.timeout_seconds = None
-opts.sleep_after_server_seconds = 5
-server_address = opts.nodes[1].internal_address
+opts.sleep_after_server_seconds = 10
 
 opts.analyses = [
-    nt.Analysis(lambda exp: exp.get_bandwidth_gbps(padding_seconds=2),
-                output_dir = "bw",
-                sort_by_key = 'mean',
-                header_func = lambda bw: "{} ({})".format(bw['mean'],bw['stdev'])),
-    nt.Analysis(lambda exp: exp.get_cpu(),
-                output_dir = "cpu",
-                sort_by_key = 'host_mean',
-                header_func = None)
+    nt.Analysis(lambda exp: exp.get_data(),
+                output_dir = "data",
+                sort_by_key = 'throughput')
 ]
-opts.plot_dir = "ab/plot"
+opts.plot_dir = "ycsb/plot"
 
+server_address = opts.nodes[0].internal_address
 opts.nodes[0].commands = ["redis-server --bind 0.0.0.0"]
-ycsb_root = "/usr/local/share/YCSB"
+#ycsb_root = "/usr/local/share/YCSB"
+ycsb_root = "/users/bamos/ycsb-0.1.4"
 ycsb_bin = ycsb_root+"/bin/ycsb"
 workload = ycsb_root+"/workloads/workloadf"
-config = "-p 'redis.host={}' -p 'redis.port=6379'".format(server_address)
+config = "-p 'redis.host={}' -p 'redis.port=6379' -p 'recordcount=10000' -p 'operationcount=1000000'".format(server_address)
+#opts.nodes[1].commands = ["sleep 10000"]
 opts.nodes[1].commands = [
     "{} load redis -s -P {} {} && {} run redis -s -P {} {}".format(
         ycsb_bin,workload,config,ycsb_bin,workload,config)]
@@ -85,3 +82,21 @@ if args.drive:
     nt.drive_experiment(opts)
 if args.analyze:
     nt.analyze(opts)
+if args.plot:
+    nt.plot.grouped_bars(
+        opts = [opts],
+        analyses = ["data/throughput.csv"],
+        stats = ["Min","None","All","Max"],
+        stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+        ylabel = "Bandwidth (Gbps)",
+        xlabel = "Number of Parallel Connections",
+        output_files = ["throughput.bars.tcp.png","throughput.bars.tcp.pdf"]
+    )
+
+    nt.plot.cdf(
+        opts = [opts],
+        analyses = ["data/throughput.csv"],
+        colors = ["#B2B2FF"],
+        xlabel = "Throughput",
+        output_files = ["throughput.cdf.png","throughput.cdf.pdf"]
+    )
