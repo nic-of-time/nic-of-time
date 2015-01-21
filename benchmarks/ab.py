@@ -22,15 +22,16 @@ if not args.drive and not args.analyze and not args.plot:
 opts = nt.Options() # nic-of-time options.
 opts.resume = True # Resume the experiment from an intermediate data state.
 opts.retry = 4
-opts.nodes = [nt.Node('s-h4',internal_address="NA",is_server=False),
-              nt.Node('s-h5',internal_address="h5.nic-acceleration.xia.susitna.pdl.cmu.local",is_server=True)]
-opts.nodes[1].commands = []
+opts.nodes = [nt.Node('s-h0',internal_address="10.53.1.32",is_server=True),
+              nt.Node('s-h1',internal_address="10.53.1.9")]
+server_address = opts.nodes[0].internal_address
+opts.nodes[0].commands = [] # nginx running in daemon mode.
 
 opts.txqueuelen = 10000 # Length of the transmit queue.
 opts.mtu = 9000 # Maximum transmission unit.
 
 opts.result_parser = nt.result_parsers.ab.AbRun
-opts.kill_cmd = 'pkill ab'
+opts.kill_cmd = 'sudo pkill ab'
 
 opts.output_stdout = True # Archive stdout from all commands.
 opts.output_files = [[],[]] # Files to archive.
@@ -56,8 +57,7 @@ opts.device.core_opts = [
 ]
 
 opts.timeout_seconds = None
-opts.sleep_after_server_seconds = None
-server_address = opts.nodes[1].internal_address
+opts.sleep_after_server_seconds = 5
 
 opts.analyses = [
     nt.Analysis(lambda exp: exp.get_bandwidth_gbps(padding_seconds=2),
@@ -71,22 +71,19 @@ opts.analyses = [
 ]
 opts.plot_dir = "ab/plot"
 
-exps = [["0_byte.https_enabled",
-   "ab -k -n 100000 -c 500 http://{}:80/0_byte.file".format(server_address)],
-["1_kb.https_enabled",
-   "ab -k -n 100000 -c 500 http://{}:80/1_kb.file".format(server_address)],
-["4_kb.https_enabled",
-   "ab -k -n 100000 -c 500 http://{}:80/4_kb.file".format(server_address)],
-["0_byte.https_disabled",
+exps = [["0_byte.no-keepalive",
    "ab -n 100000 -c 500 http://{}:80/0_byte.file".format(server_address)],
-["1_kb.https_disabled",
+["1_kb.no-keepalive",
    "ab -n 100000 -c 500 http://{}:80/1_kb.file".format(server_address)],
-["4_kb.https_disabled",
-   "ab -n 100000 -c 500 http://{}:80/4_kb.file".format(server_address)]]
+["1_mb.keepalive",
+   "ab -n 25000 -k -c 500 http://{}:80/1_mb.file".format(server_address)],
+["1_mb.no-keepalive",
+   "ab -n 25000 -c 500 http://{}:80/1_mb.file".format(server_address)]]
+#exps = [["debug","sleep 10000"]]
 
 exp_opts = {}
 for tag, cmd in exps:
-    opts.nodes[0].commands = [cmd]
+    opts.nodes[1].commands = [cmd]
     prefix = "ab/"+tag
     opts.data_dir = prefix + "/data"
     opts.analysis_dir = prefix + "/analysis"

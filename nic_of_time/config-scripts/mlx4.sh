@@ -7,7 +7,7 @@ die() { echo $*; exit -1; }
 [[ $# == 2 ]] || \
   die "Usage: $0 <ethernet device> <module options>"
 DEVICE=$1
-ETHTOOL_OPTS=$2
+MODULE_OPTS=$2
 
 tee /etc/modprobe.d/mlx4.conf<<EOF
 softdep mlx4_core post: mlx4_en

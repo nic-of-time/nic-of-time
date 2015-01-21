@@ -62,20 +62,20 @@ def runExp(opts,exp_num,eth_opt_tups,dev_opts):
     eth_opt_str = " ".join([x[1] + " on" for x in eth_opt_tups] + \
                        [x[1] + " off" for x in opts.ethtool_opts
                         if x not in eth_opt_tups])
-    module_opt_str = opts.device.get_opt_str(dev_opts)
 
     if opts.kill_cmd:
         print("  + Sending '{}' to all nodes.".format(opts.kill_cmd))
         for node in opts.nodes:
-            cmd = ["ssh", node.external_address, "sudo {}".format(opts.kill_cmd)]
+            cmd = ["ssh", node.external_address, opts.kill_cmd]
             p = Popen(cmd,stdout=PIPE,stderr=PIPE)
             p.communicate()
 
     eth_log_fname = "{}/{}/ethtool.log".format(opts.data_dir,exp_num)
-    err = opts.device.init(opts,dev_opts)
+    module_opt_str = opts.device.get_opt_str(dev_opts)
+    err = opts.device.init(opts,module_opt_str)
     if err != 0: return err
     err = init_ethtool(opts,eth_opt_str,eth_log_fname)
-    if err != 0: return err
+    if err != 0: return -100
 
     print("  + Starting server processes.")
     fds = []
@@ -172,7 +172,7 @@ def run(opts):
                 if not r:
                     raise Exception("Unexpected error file format.")
                 known_errors.append(int(r.group(1)))
-    err_f = open(opts.data_dir+"/error-combinations.txt",'w')
+    err_f = open(err_fname,'w')
 
     opt_combinations = [get_ethtool_combinations(opts)] + \
                        opts.device.get_combinations()
@@ -201,11 +201,16 @@ def run(opts):
             for i in range(opts.retry):
                 print("  + Trying experiment: {} of {}.".format(i,opts.retry))
                 err = runExp(opts,exp_num,eth_opts,dev_opts)
-                if err == 0:
+                if err == -100:
+                    print("  + ethtool failed, not retrying further.")
+                    break
+                elif not opts.result_parser(exp_num,opts.data_dir+"/"+str(exp_num),opts).is_valid:
+                    print("  + Parsing results failed, retrying")
+                elif err == 0:
                     print("  + Passed.")
                     break
                 else:
-                    print("  + Failed.")
+                    print("  + Failed, retrying.")
         else:
             print("Experiment {} is a known error.".format(exp_num))
 

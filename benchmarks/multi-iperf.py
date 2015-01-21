@@ -29,7 +29,7 @@ opts.txqueuelen = 10000 # Length of the transmit queue.
 opts.mtu = 9000 # Maximum transmission unit.
 
 opts.result_parser = nt.result_parsers.iperf.IperfRun
-opts.kill_cmd = 'pkill iperf'
+opts.kill_cmd = 'sudo pkill iperf'
 
 opts.output_stdout = True # Archive stdout from all commands.
 opts.output_files = [[],[]] # Files to archive.

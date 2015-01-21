@@ -14,7 +14,7 @@ class Igb:
 
     def get_opt_str(self,opt_tup):
         moduleOpts = ""
-        for x in opt_tup:
+        for x in opt_tup[0]:
           moduleOpts += x[1] + "=" + x[2]
           moduleOpts += ","
         moduleOpts = moduleOpts[:-1]
@@ -24,10 +24,11 @@ class Igb:
         print("  + Initializing igb")
         for node in opts.nodes:
             cmd = ["ssh", node.external_address,
-                   "sudo {}/igb.sh {} \"{}\"".format(
+                   "sudo {}/igb.sh {} \"{}\" {}".format(
                        opts.remote_config_scripts_dir,
                        opts.device.interface_name,
-                       module_opt_str)]
+                       module_opt_str,
+                       node.internal_address)]
             p = Popen(cmd,stdout=PIPE,stderr=PIPE)
             out = p.communicate()
             if p.returncode != 0:

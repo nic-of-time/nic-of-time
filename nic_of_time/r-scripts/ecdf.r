@@ -15,6 +15,12 @@ colors <- parse_1d_str_args(args[3])
 xlabel <- args[4]
 output_files <- parse_1d_str_args(args[5])
 
+if (data_labels == " ") {
+  legend_position <- "none"
+} else {
+  legend_position <- "bottom"
+}
+
 in_data <- lapply(in_files, function(f) as.numeric(read.csv(f,header=F,nrow=1)))
 
 df <- transform(melt(in_data),L1=as.factor(L1))
@@ -29,6 +35,6 @@ p <- ggplot(df, aes(x=value)) +
   xlab(xlabel) +
   ylab("") +
   theme_bw() +
-  theme(legend.position="bottom") +
+  theme(legend.position=legend_position) +
   expand_limits(x=0,y=0)
 lapply(output_files, function(f) ggsave(f,width=7,height=6))

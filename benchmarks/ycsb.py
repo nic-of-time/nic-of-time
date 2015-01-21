@@ -83,20 +83,20 @@ if args.drive:
 if args.analyze:
     nt.analyze(opts)
 if args.plot:
-    nt.plot.grouped_bars(
+    nt.plot.bars(
         opts = [opts],
         analyses = ["data/throughput.csv"],
         stats = ["Min","None","All","Max"],
         stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
         ylabel = "Bandwidth (Gbps)",
-        xlabel = "Number of Parallel Connections",
         output_files = ["throughput.bars.tcp.png","throughput.bars.tcp.pdf"]
     )
 
     nt.plot.cdf(
         opts = [opts],
         analyses = ["data/throughput.csv"],
-        colors = ["#B2B2FF"],
+        data_labels = [" "],
+        colors = ["#000000"],
         xlabel = "Throughput",
         output_files = ["throughput.cdf.png","throughput.cdf.pdf"]
     )

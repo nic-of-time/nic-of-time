@@ -7,7 +7,7 @@ import sys
 sys.path.append("..")
 import nic_of_time as nt
 import nic_of_time.result_parsers.ycsb
-import nic_of_time.devices.mlx4
+import nic_of_time.devices.igb
 import nic_of_time.plot
 
 parser = argparse.ArgumentParser()
@@ -22,8 +22,8 @@ if not args.drive and not args.analyze and not args.plot:
 opts = nt.Options() # nic-of-time options.
 opts.resume = True # Resume the experiment from an intermediate data state.
 opts.retry = 4
-opts.nodes = [nt.Node('s-h6',internal_address="10.51.1.11",is_server=True),
-              nt.Node('s-h6',internal_address="10.51.1.11")]
+opts.nodes = [nt.Node('s-h4',internal_address="10.51.1.28",is_server=True),
+              nt.Node('s-h5',internal_address="10.51.1.8")]
 
 opts.txqueuelen = 10000 # Length of the transmit queue.
 opts.mtu = 9000 # Maximum transmission unit.
@@ -46,7 +46,7 @@ opts.ethtool_opts = [
     #['tx-vlan-offload','txvlan'],
     ['receive-hashing','rxhash']
 ]
-opts.device = nt.devices.mlx4.Mlx4("eth0")
+opts.device = nt.devices.igb.Igb("eth0")
 opts.device.dev_opts = [
     ['rss','RSS','8']
 ]

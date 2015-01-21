@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import re
 import statistics
 import sys
 
@@ -9,6 +10,9 @@ import nic_of_time.result_parsers
 
 class YcsbRun:
     def __init__(self,exp_num,path,opts):
+        self.throughput_key='Throughput(ops/sec)'
+        self.runtime_key='RunTime(ms)'
+
         self.exp_num = exp_num
         self.path = path
         self.ethtool = nt.result_parsers.EthtoolOpts(path+"/ethtool.log",opts)
@@ -18,11 +22,34 @@ class YcsbRun:
 
         self.device_opts = opts.device.get_exp_opts(path)
 
-        # TODO: YCSB-specific code.
-        # with open("{}/{}-0-stdout".format(
-        #         path,opts.nodes[0].external_address),"r") as f:
-        #     for line in f.readlines():
-        #         if "Total transferred" in line:
-        #             self.is_valid = True
-        #             return
-        self.is_valid = True
+        self.data = {}
+        inExperiment = False
+        raw_fname = "{}/{}-0-stdout".format(path,opts.nodes[1].external_address)
+        if not os.path.isfile(raw_fname):
+            self.is_valid = False
+            return
+
+        data = {}
+        with open(raw_fname,"r") as f:
+            for line in f.readlines():
+                if not inExperiment:
+                    if re.search("Command line:.*-t$",line):
+                        inExperiment = True
+                else:
+                    if "OVERALL" in line:
+                        r = re.search("\[OVERALL\], (.*), (.*)",line)
+                        if r:
+                            data[r.group(1)] = float(r.group(2))
+        if self.throughput_key in data and self.runtime_key in data \
+                and data[self.throughput_key] > 0:
+            self.data = data
+            self.is_valid = True
+        else:
+            self.is_valid = False
+
+    def get_data(self):
+        assert(self.is_valid)
+        return {
+            'throughput': self.data[self.throughput_key],
+            'runtime': self.data[self.runtime_key]
+        }
