@@ -27,7 +27,7 @@ def init_ethtool(opts,eth_opt_str,eth_log_fname):
     log_f = open(eth_log_fname,"w")
     for node in opts.nodes:
         cmd = ["ssh", node.external_address,
-               "sudo {}/ethtool.sh {} \"{}\" {} {} {}".format(
+               "sudo nohup {}/ethtool.sh {} \"{}\" {} {} {}".format(
                    opts.remote_config_scripts_dir,
                    opts.device.interface_name,
                    eth_opt_str,

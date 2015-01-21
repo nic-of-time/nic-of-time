@@ -60,16 +60,10 @@ opts.timeout_seconds = None
 opts.sleep_after_server_seconds = 5
 
 opts.analyses = [
-    nt.Analysis(lambda exp: exp.get_bandwidth_gbps(padding_seconds=2),
-                output_dir = "bw",
-                sort_by_key = 'mean',
-                header_func = lambda bw: "{} ({})".format(bw['mean'],bw['stdev'])),
-    nt.Analysis(lambda exp: exp.get_cpu(),
-                output_dir = "cpu",
-                sort_by_key = 'host_mean',
-                header_func = None)
+    nt.Analysis(lambda exp: exp.get_data(),
+                output_dir = "data",
+                sort_by_key = 'requests_per_second')
 ]
-opts.plot_dir = "ab/plot"
 
 exps = [["0_byte.no-keepalive",
    "ab -n 100000 -c 500 http://{}:80/0_byte.file".format(server_address)],
@@ -87,8 +81,26 @@ for tag, cmd in exps:
     prefix = "ab/"+tag
     opts.data_dir = prefix + "/data"
     opts.analysis_dir = prefix + "/analysis"
+    opts.plot_dir = prefix+"/plot"
     if args.drive:
         nt.drive_experiment(opts)
     if args.analyze:
         nt.analyze(opts)
+    nt.plot.bars(
+        opts = [opts],
+        analyses = ["data/requests_per_second.csv"],
+        stats = ["Min","None","All","Max"],
+        stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+        ylabel = "Requests per second",
+        output_files = ["rps.bars.png","rps.bars.pdf"]
+    )
+
+    nt.plot.cdf(
+        opts = [opts],
+        analyses = ["data/requests_per_second.csv"],
+        data_labels = [" "],
+        colors = ["#000000"],
+        xlabel = "Requests per second",
+        output_files = ["rps.cdf.png","rps.cdf.pdf"]
+    )
     exp_opts[prefix]= copy.deepcopy(opts)

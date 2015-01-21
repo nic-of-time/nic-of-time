@@ -88,7 +88,7 @@ if args.plot:
         analyses = ["data/throughput.csv"],
         stats = ["Min","None","All","Max"],
         stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
-        ylabel = "Bandwidth (Gbps)",
+        ylabel = "Throughput (ops/second)",
         output_files = ["throughput.bars.tcp.png","throughput.bars.tcp.pdf"]
     )
 
@@ -97,6 +97,6 @@ if args.plot:
         analyses = ["data/throughput.csv"],
         data_labels = [" "],
         colors = ["#000000"],
-        xlabel = "Throughput",
+        xlabel = "Throughput (ops/second)",
         output_files = ["throughput.cdf.png","throughput.cdf.pdf"]
     )

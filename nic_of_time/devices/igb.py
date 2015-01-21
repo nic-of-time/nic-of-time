@@ -24,7 +24,7 @@ class Igb:
         print("  + Initializing igb")
         for node in opts.nodes:
             cmd = ["ssh", node.external_address,
-                   "sudo {}/igb.sh {} \"{}\" {}".format(
+                   "sudo nohup {}/igb.sh {} \"{}\" {}".format(
                        opts.remote_config_scripts_dir,
                        opts.device.interface_name,
                        module_opt_str,

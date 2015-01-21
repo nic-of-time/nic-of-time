@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import re
 import statistics
 import sys
 
@@ -20,11 +21,23 @@ class AbRun:
 
         # TODO: Parse file.
         results_file = "{}/{}-0-stdout".format(path,opts.nodes[1].external_address)
+        data = {}
         if os.path.isfile(results_file):
             with open(results_file,"r") as f:
                 for line in f.readlines():
-                    if "Total transferred" in line:
-                        print(line)
-                        self.is_valid = True
-                        return
-        self.is_valid = False
+                    r = re.search("(.*): *([\d\.]*)",line)
+                    if r:
+                        data[r.group(1)] = r.group(2)
+
+        if 'Requests per second' in data and float(data['Requests per second']) > 0:
+            self.data=data
+            self.is_valid = True
+        else:
+            self.is_valid = False
+
+    def get_data(self):
+        assert(self.is_valid)
+        #TODO: Clean up keys, add more analysis.
+        return {
+            'requests_per_second': self.data['Requests per second']
+        }

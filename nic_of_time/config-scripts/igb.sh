@@ -10,14 +10,12 @@ DEVICE=$1
 MODULE_OPTS=$2
 IP_ADDRESS=$3
 
-{
-  ifconfig $DEVICE down;
-  modprobe -r igb;
-  modprobe igb $MODULE_OPTS;
-  sleep 5;
-  ifconfig $DEVICE up;
-  ifconfig $DEVICE up $IP_ADDRESS;
-} & disown
+ifconfig $DEVICE down
+modprobe -r igb
+modprobe igb $MODULE_OPTS
+sleep 5
+ifconfig $DEVICE up
+ifconfig $DEVICE up $IP_ADDRESS
 
 # check if we need to enable in-kernel RPS
 if [[ $MODULE_OPTS != *"RSS"* ]]; then
