@@ -65,6 +65,8 @@ opts.analyses = [
                 sort_by_key = 'requests_per_second')
 ]
 
+opts.categories = {}
+
 exps = [["0_byte.no-keepalive",
    "ab -n 100000 -c 500 http://{}:80/0_byte.file".format(server_address)],
 ["1_kb.no-keepalive",
@@ -106,10 +108,8 @@ for tag, cmd in exps:
         )
     exp_opts[tag]= copy.deepcopy(opts)
 
-
 tags = ["0_byte.no-keepalive","1_kb.no-keepalive","1_mb.no-keepalive","1_mb.keepalive"]
 labels = ["Empty", "1 kb", "1 mb", "1 mb (keepalive)"]
-print(exp_opts)
 nt.plot.grouped_bars(
     opts = [exp_opts[x] for x in tags],
     analyses = ["data/requests_per_second.csv"]*4,
@@ -119,4 +119,29 @@ nt.plot.grouped_bars(
     ylabel = "Requests per Second",
     xlabel = "Requested File Size",
     output_files = ["rps.bars.png","rps.bars.pdf"]
+)
+
+tags = ["0_byte.no-keepalive","1_kb.no-keepalive"]
+labels = ["Empty", "1 kb"]
+nt.plot.grouped_bars(
+    opts = [exp_opts[x] for x in tags],
+    analyses = ["data/requests_per_second.csv"]*len(tags),
+    data_labels = labels,
+    stats = ["Min","None","All","Max"],
+    stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+    ylabel = "Requests per Second",
+    xlabel = "Requested File Size",
+    output_files = ["rps.bars.small-files."+ext for ext in ["png","pdf"]]
+)
+tags = ["1_mb.no-keepalive","1_mb.keepalive"]
+labels = ["1 mb", "1 mb (keepalive)"]
+nt.plot.grouped_bars(
+    opts = [exp_opts[x] for x in tags],
+    analyses = ["data/requests_per_second.csv"]*len(tags),
+    data_labels = labels,
+    stats = ["Min","None","All","Max"],
+    stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+    ylabel = "Requests per Second",
+    xlabel = "Requested File Size",
+    output_files = ["rps.bars.1mb."+ext for ext in ["png","pdf"]]
 )
