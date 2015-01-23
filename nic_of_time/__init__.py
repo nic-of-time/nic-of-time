@@ -35,6 +35,8 @@ class Options:
 
         self.r_dir = os.path.dirname(os.path.realpath(__file__))+"/r-scripts"
 
+        self.categories = {}
+
 class Node:
     def __init__(self,external_address,internal_address=None,is_server=False):
         if not internal_address:

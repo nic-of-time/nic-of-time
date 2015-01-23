@@ -57,12 +57,12 @@ def grouped_bars(opts, analyses, data_labels, stats, stat_colors,
             opt_data = [float(x) for x in f.readline().split(",")]
             next_line = f.readline()
             if len(next_line) > 0:
-                none_data = float(f.readline())
+                none_data = float(next_line)
             else:
                 none_data = None
             next_line = f.readline()
             if len(next_line) > 0:
-                all_data = float(f.readline())
+                all_data = float(next_line)
             else:
                 all_data = None
         stat_vals = []
