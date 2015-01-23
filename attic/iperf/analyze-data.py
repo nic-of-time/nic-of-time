@@ -10,7 +10,7 @@ import json
 import statistics
 from operator import add
 
-sys.path.insert(0,"../../benchmarks/shared")
+sys.path.insert(0,"../shared")
 from analysis import EthtoolOpts,ModuleOpts,mkdir_p,flatmap
 
 mkdir_p("analysis")

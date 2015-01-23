@@ -219,23 +219,48 @@ for (idx in udp_mask_indices) {
 print(length(udp_cpuR4_masked))
 print(length(udp_bw4_masked))
 
-#df <- data.frame(udp_bw4,udp_cpuR4)
-p <- ggplot() +
+## df <- data.frame(udp_bw4,udp_cpuAvg4)
+## convex_hull <- df[chull(df$udp_bw4,df$udp_cpuAvg4),]
+## names(convex_hull) <- c("hull_y","hull_x")
+## df <- merge(df,convex_hull)
+
+df <- data.frame(udp_bw4,udp_cpuR4)
+convex_hull <- df[chull(df$udp_bw4,df$udp_cpuR4),]
+names(convex_hull) <- c("hull_y","hull_x")
+df <- merge(df,convex_hull)
+
+p <- ggplot(df) +
   xlab("CPU Utilization (%)") +
   ylab("Bandwidth") +
-  geom_point(aes(x=udp_cpuR4,y=udp_bw4)) +
+  geom_point(aes(x=udp_cpuR4, y=udp_bw4)) +
   geom_point(aes(x=udp_cpuR4_masked, y=udp_bw4_masked,color='masked')) +
-  geom_smooth(aes(x=udp_cpuR4,y=udp_bw4),method="lm", formula = y~x,
+  geom_smooth(aes(x=udp_cpuR4, y=udp_bw4), method="lm", formula = y~x,
     fullrange=TRUE) +
   theme_bw() +
   theme(legend.title=element_blank()) +
   expand_limits(x=0,y=0) +
+  geom_polygon(aes(x=hull_x,y=hull_y),alpha=0.2) +
   scale_color_manual(
     name="",
     values = c("masked"="#FF8080"),
-    labels = c("tx, sg, tso, gro, rxhash"))
-  #geom_text(aes(x=udp_cpuR4,y=udp_bw4,label=udp_cpuR4,
-  #  size=1,hjust=0,vjust=0))
+    labels = c("tx, sg, tso"))
+
+## p <- ggplot() +
+##   xlab("CPU Utilization (%)") +
+##   ylab("Bandwidth") +
+##   geom_point(aes(x=udp_cpuR4,y=udp_bw4)) +
+##   geom_point(aes(x=udp_cpuR4_masked, y=udp_bw4_masked,color='masked')) +
+##   geom_smooth(aes(x=udp_cpuR4,y=udp_bw4),method="lm", formula = y~x,
+##     fullrange=TRUE) +
+##   theme_bw() +
+##   theme(legend.title=element_blank()) +
+##   expand_limits(x=0,y=0) +
+##   scale_color_manual(
+##     name="",
+##     values = c("masked"="#FF8080"),
+##     labels = c("tx, sg, tso, gro, rxhash"))
+##   #geom_text(aes(x=udp_cpuR4,y=udp_bw4,label=udp_cpuR4,
+##   #  size=1,hjust=0,vjust=0))
 ggsave("analysis/udp-4-cpu-bandwidth.pdf",width=7,height=6)
 
 tcp_bw4 = as.numeric(read.csv("analysis/tcp.4.bw.means.csv",header=F))
@@ -255,6 +280,10 @@ for (idx in tcp_mask_indices) {
 }
 
 df <- data.frame(tcp_bw4,tcp_cpuAvg4)
+convex_hull <- df[chull(df$tcp_bw4,df$tcp_cpuAvg4),]
+names(convex_hull) <- c("hull_y","hull_x")
+df <- merge(df,convex_hull)
+
 p <- ggplot(df) +
   xlab("CPU Utilization (%)") +
   ylab("Bandwidth") +
@@ -265,6 +294,7 @@ p <- ggplot(df) +
   theme_bw() +
   theme(legend.title=element_blank()) +
   expand_limits(x=0,y=0) +
+  geom_polygon(aes(x=hull_x,y=hull_y),alpha=0.2) +
   scale_color_manual(
     name="",
     values = c("masked"="#FF8080"),
