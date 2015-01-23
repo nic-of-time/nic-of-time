@@ -12,6 +12,7 @@ class YcsbRun:
     def __init__(self,exp_num,path,opts):
         self.throughput_key='Throughput(ops/sec)'
         self.runtime_key='RunTime(ms)'
+        self.latency_key='AverageLatency(us)'
 
         self.exp_num = exp_num
         self.path = path
@@ -36,11 +37,13 @@ class YcsbRun:
                     if re.search("Command line:.*-t$",line):
                         inExperiment = True
                 else:
-                    if "OVERALL" in line:
-                        r = re.search("\[OVERALL\], (.*), (.*)",line)
-                        if r:
-                            data[r.group(1)] = float(r.group(2))
+                    r = re.search("\[OVERALL\], (.*), (.*)",line)
+                    if not r:
+                        r = re.search("\[UPDATE\], (.*), (.*)",line)
+                    if r:
+                        data[r.group(1)] = float(r.group(2))
         if self.throughput_key in data and self.runtime_key in data \
+                and self.latency_key in data \
                 and data[self.throughput_key] > 0:
             self.data = data
             self.is_valid = True
@@ -51,5 +54,6 @@ class YcsbRun:
         assert(self.is_valid)
         return {
             'throughput': self.data[self.throughput_key],
+            'latency': self.data[self.latency_key],
             'runtime': self.data[self.runtime_key]
         }

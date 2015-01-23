@@ -18,7 +18,7 @@ def get_valid_experiments(opts):
                     exps.append(exp)
                 total_exps += 1
     print("  + Experiments: {} valid out of {} total.".format(len(exps),total_exps))
-    return exps
+    return sorted(exps,key=lambda res_parser: res_parser.exp_num)
 
 def run(opts):
     print("Analyzing data.")
@@ -28,19 +28,21 @@ def run(opts):
 
     for analysis in opts.analyses:
         responses = []
-        no_opts_exp_idx = None
-        all_opts_exp_idx = None
+        all_opts_exp_idx = -1
         for exp in exps:
             responses.append((analysis.exp_func(exp),exp))
-            if len(exp.ethtool.opts['enabled']) == 0 and opts.device.is_none(exp.device_opts):
-                no_opts_exp_idx = len(responses)-1
             if len(exp.ethtool.opts['enabled']) == len(opts.ethtool_opts) \
                and opts.device.is_all(exp.device_opts):
                 all_opts_exp_idx = len(responses)-1
 
-        if not no_opts_exp_idx:
+        if len(exps[0].ethtool.opts['enabled']) == 0 and opts.device.is_none(exps[0].device_opts):
+            no_opts_exp_idx = 0
+        else:
+            no_opts_exp_idx = -1
+        if no_opts_exp_idx == -1:
             print("Warning: Unable to find experiment with no options enabled.")
-        if not all_opts_exp_idx:
+            sys.exit(-1)
+        if all_opts_exp_idx == -1:
             print("Warning: Unable to find experiment with all options enabled.")
 
         sorted_responses = sorted(responses,
@@ -48,7 +50,7 @@ def run(opts):
                                   reverse=analysis.reverse_sort)
         out = opts.analysis_dir+"/"+analysis.output_dir
         mkdir_p(out)
-        with open(out+"/sorted.txt","w") as f:
+        with open(out+"/"+analysis.sort_by_key+".sorted.txt","w") as f:
             for response,exp in sorted_responses:
                 if analysis.header_func:
                     f.write("\n\n=== {} ===\n".format(analysis.header_func(response)))

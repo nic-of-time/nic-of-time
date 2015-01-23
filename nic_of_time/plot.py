@@ -104,7 +104,8 @@ def cdf(opts, analyses, data_labels, colors, xlabel, output_files):
     if p.returncode != 0:
         raise Exception("Plot failed.")
 
-def scatter(opts, analyses, convex_hull, xlabel, ylabel, output_files):
+def scatter(opts, analyses, convex_hull, xlabel, ylabel, output_files,
+            show_fit="False", include_origin="False"):
     mkdir_p(opts[0].plot_dir)
     assert(len(opts) == 2) # TODO Exception
     assert(len(opts) == len(analyses)) # TODO Exception
@@ -113,6 +114,8 @@ def scatter(opts, analyses, convex_hull, xlabel, ylabel, output_files):
         in_files.append(opt.analysis_dir + "/" + analyses[idx])
     cmd = [opts[0].r_dir+"/scatter.r",
         ",".join(in_files),
+        str(show_fit),
+        str(include_origin),
         str(convex_hull),
         xlabel,
         ylabel,
