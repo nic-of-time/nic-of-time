@@ -76,31 +76,47 @@ exps = [["0_byte.no-keepalive",
 #exps = [["debug","sleep 10000"]]
 
 exp_opts = {}
+opts.plot_dir = "ab/plot"
 for tag, cmd in exps:
     opts.nodes[1].commands = [cmd]
     prefix = "ab/"+tag
     opts.data_dir = prefix + "/data"
     opts.analysis_dir = prefix + "/analysis"
-    opts.plot_dir = prefix+"/plot"
     if args.drive:
         nt.drive_experiment(opts)
     if args.analyze:
         nt.analyze(opts)
-    nt.plot.bars(
-        opts = [opts],
-        analyses = ["data/requests_per_second.csv"],
-        stats = ["Min","None","All","Max"],
-        stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
-        ylabel = "Requests per second",
-        output_files = ["rps.bars.png","rps.bars.pdf"]
-    )
+    if args.plot:
+        nt.plot.bars(
+            opts = [opts],
+            analyses = ["data/requests_per_second.csv"],
+            stats = ["Min","None","All","Max"],
+            stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+            ylabel = "Requests per second",
+            output_files = [tag+".rps.bars.png",tag+".rps.bars.pdf"]
+        )
 
-    nt.plot.cdf(
-        opts = [opts],
-        analyses = ["data/requests_per_second.csv"],
-        data_labels = [" "],
-        colors = ["#000000"],
-        xlabel = "Requests per second",
-        output_files = ["rps.cdf.png","rps.cdf.pdf"]
-    )
-    exp_opts[prefix]= copy.deepcopy(opts)
+        nt.plot.cdf(
+            opts = [opts],
+            analyses = ["data/requests_per_second.csv"],
+            data_labels = [" "],
+            colors = ["#000000"],
+            xlabel = "Requests per second",
+            output_files = [tag+".rps.cdf.png",tag+".rps.cdf.pdf"]
+        )
+    exp_opts[tag]= copy.deepcopy(opts)
+
+
+tags = ["0_byte.no-keepalive","1_kb.no-keepalive","1_mb.no-keepalive","1_mb.keepalive"]
+labels = ["Empty", "1 kb", "1 mb", "1 mb (keepalive)"]
+print(exp_opts)
+nt.plot.grouped_bars(
+    opts = [exp_opts[x] for x in tags],
+    analyses = ["data/requests_per_second.csv"]*4,
+    data_labels = labels,
+    stats = ["Min","None","All","Max"],
+    stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+    ylabel = "Requests per Second",
+    xlabel = "Requested File Size",
+    output_files = ["rps.bars.png","rps.bars.pdf"]
+)
