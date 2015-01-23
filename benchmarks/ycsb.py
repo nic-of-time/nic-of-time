@@ -54,6 +54,17 @@ opts.device.core_opts = [
     ['flow-steering','log_num_mgm_entry_size','-1']
 ]
 
+opts.categories = {
+    'mem-cpu': ['rx-checksumming', 'tx-checksumming', 'scatter-gather',
+                'tcp-segmentation-offload', 'generic-segmentation-offload',
+                'generic-receive-offload'],
+    'locality': ['receive-hashing', 'udp-rss', 'flow-steering'],
+    'receiver': ['rx-checksumming', 'generic-receive-offload', 'receive-hashing',
+                 'udp-rss', 'flow-steering'],
+    'sender': ['tx-checksumming', 'scatter-gather', 'tcp-segmentation-offload',
+               'generic-segmentation-offload']
+}
+
 opts.timeout_seconds = None
 opts.sleep_after_server_seconds = 10
 
@@ -92,7 +103,7 @@ if args.plot:
         stats = ["Min","None","All","Max"],
         stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
         ylabel = "Throughput (ops/second)",
-        output_files = ["throughput.bars.tcp.png","throughput.bars.tcp.pdf"]
+        output_files = ["throughput.bars.png","throughput.bars.pdf"]
     )
 
     nt.plot.cdf(
@@ -110,7 +121,7 @@ if args.plot:
         stats = ["Min","None","All","Max"],
         stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
         ylabel = "Latency (us)",
-        output_files = ["latency.bars.tcp.png","latency.bars.tcp.pdf"]
+        output_files = ["latency.bars.png","latency.bars.pdf"]
     )
 
     nt.plot.cdf(
@@ -124,9 +135,51 @@ if args.plot:
 
     nt.plot.scatter(
         opts = [opts]*2,
-        analyses = ["data/throughput.csv", "data/latency.csv"],
+        analyses = ["data/latency.csv", "data/throughput.csv"],
         convex_hull = True,
-        xlabel = "Throughput (ops/second)",
-        ylabel = "Latency (us)",
+        xlabel = "Latency (us)",
+        ylabel = "Throughput (ops/second)",
         output_files = ["latency.throughput.pdf","latency.throughput.png"]
+    )
+
+    # Categories
+    nt.plot.grouped_bars(
+        opts = [opts]*5,
+        analyses = ["data/throughput.csv"] +
+            ["data/throughput.category.{}.csv".format(tag) for tag in opts.categories],
+        data_labels = ["global"] + [tag for tag in opts.categories],
+        stats = ["Min","Max"],
+        stat_colors = ["#6497b1","#011f4b"],
+        ylabel = "Throughput (ops/second)",
+        xlabel = "Category",
+        output_files = ["throughput.categories.bars."+ext for ext in ["png","pdf"]]
+    )
+    nt.plot.grouped_bars(
+        opts = [opts]*5,
+        analyses = ["data/latency.csv"] +
+            ["data/latency.category.{}.csv".format(tag) for tag in opts.categories],
+        data_labels = ["global"] + [tag for tag in opts.categories],
+        stats = ["Min","Max"],
+        stat_colors = ["#6497b1","#011f4b"],
+        ylabel = "Latency (us)",
+        xlabel = "Category",
+        output_files = ["latency.categories.bars."+ext for ext in ["png","pdf"]]
+    )
+    nt.plot.cdf(
+        opts = [opts]*3,
+        analyses = ["data/throughput.csv"] +
+            ["data/throughput.category.{}.csv".format(tag) for tag in ['mem-cpu', 'locality']],
+        data_labels = ["global"] + [tag for tag in ['mem-cpu', 'locality']],
+        colors = ["#D69999","#AD3333","#7A0000"],
+        xlabel = "Throughput (ops/second)",
+        output_files = ["throughput.categories.cdf."+ext for ext in ["png","pdf"]]
+    )
+    nt.plot.cdf(
+        opts = [opts]*3,
+        analyses = ["data/latency.csv"] +
+            ["data/latency.category.{}.csv".format(tag) for tag in ['mem-cpu', 'locality']],
+        data_labels = ["global"] + [tag for tag in ['mem-cpu', 'locality']],
+        colors = ["#D69999","#AD3333","#7A0000"],
+        xlabel = "Latency (us)",
+        output_files = ["latency.categories.cdf."+ext for ext in ["png","pdf"]]
     )

@@ -9,6 +9,9 @@ def bars(opts, analyses, stats, stat_colors,
     all_stats = []
     assert(len(opts) == len(analyses)) # TODO Exception
     assert(len(stats) == len(stat_colors)) # TODO Exception
+    for v in all_stats+stats+stat_colors:
+        assert("," not in v)
+        assert(";" not in v)
     for idx,opt in enumerate(opts):
         with open(opt.analysis_dir + "/" + analyses[idx],"r") as f:
             opt_data = [float(x) for x in f.readline().split(",")]
@@ -52,8 +55,16 @@ def grouped_bars(opts, analyses, data_labels, stats, stat_colors,
     for idx,opt in enumerate(opts):
         with open(opt.analysis_dir + "/" + analyses[idx],"r") as f:
             opt_data = [float(x) for x in f.readline().split(",")]
-            none_data = float(f.readline())
-            all_data = float(f.readline())
+            next_line = f.readline()
+            if len(next_line) > 0:
+                none_data = float(f.readline())
+            else:
+                none_data = None
+            next_line = f.readline()
+            if len(next_line) > 0:
+                all_data = float(f.readline())
+            else:
+                all_data = None
         stat_vals = []
         for stat in stats:
             stat = stat.lower()

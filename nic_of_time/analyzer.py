@@ -1,3 +1,5 @@
+from itertools import combinations
+import copy
 import os
 import re
 import sys
@@ -41,7 +43,6 @@ def run(opts):
             no_opts_exp_idx = -1
         if no_opts_exp_idx == -1:
             print("Warning: Unable to find experiment with no options enabled.")
-            sys.exit(-1)
         if all_opts_exp_idx == -1:
             print("Warning: Unable to find experiment with all options enabled.")
 
@@ -65,11 +66,27 @@ def run(opts):
         with open(out+"/"+analysis.sort_by_key+".csv","w") as f:
             f.write(",".join([str(x[0][analysis.sort_by_key]) for x in responses]))
             f.write("\n")
-            if no_opts_exp_idx:
+            if no_opts_exp_idx != -1:
                 f.write("{}\n".format(responses[no_opts_exp_idx][0][analysis.sort_by_key]))
             else:
                 f.write("0\n")
-            if all_opts_exp_idx:
+            if all_opts_exp_idx != -1:
                 f.write("{}\n".format(responses[all_opts_exp_idx][0][analysis.sort_by_key]))
             else:
                 f.write("0\n")
+
+        # Category analysis.
+        for category,enabled_options in opts.categories.items():
+            print(category)
+            filtered_responses = []
+            for i in range(0,len(enabled_options)+1):
+                for combination in combinations(enabled_options,i):
+                    for response,exp in responses:
+                        response_options = copy.deepcopy(exp.ethtool.opts['enabled'])
+                        for dev_opt in exp.device_opts:
+                            response_options += [x[0] for x in dev_opt]
+                        if response_options == list(combination):
+                            filtered_responses.append((response,exp))
+            with open(out+"/"+analysis.sort_by_key+".category."+category+".csv","w") as f:
+                f.write(",".join([str(x[0][analysis.sort_by_key]) for x in filtered_responses]))
+                f.write("\n")

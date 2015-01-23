@@ -35,6 +35,5 @@ p <- ggplot(df, aes(x=value)) +
   xlab(xlabel) +
   ylab("") +
   theme_bw() +
-  theme(legend.position=legend_position) +
-  expand_limits(x=0,y=0)
+  theme(legend.position=legend_position)
 lapply(output_files, function(f) ggsave(f,width=7,height=6))
