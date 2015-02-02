@@ -1,3 +1,4 @@
+from collections import defaultdict
 from itertools import combinations
 import copy
 import os
@@ -5,6 +6,7 @@ import re
 import sys
 
 from nic_of_time.helper import mkdir_p
+import nic_of_time.plot
 
 def get_valid_experiments(opts):
     exps = []
@@ -47,7 +49,7 @@ def run(opts):
             print("Warning: Unable to find experiment with all options enabled.")
 
         sorted_responses = sorted(responses,
-                                  key=lambda x: x[0][analysis.sort_by_key],
+                                  key=lambda x: float(x[0][analysis.sort_by_key]),
                                   reverse=analysis.reverse_sort)
         out = opts.analysis_dir+"/"+analysis.output_dir
         mkdir_p(out)
@@ -63,6 +65,26 @@ def run(opts):
                 for k,v in sorted(response.items()):
                     f.write("  + {}: {}\n".format(k,v))
 
+        sorted_responses.reverse() # Writes back into sorted_responses!
+        labels = []
+        all_opt_data = []
+        for opt in opts.ethtool_opts + opts.device.get_opts():
+            labels.append(opt[0])
+            opt_data = []
+            for response,exp in sorted_responses:
+                #if opt in
+                all_opt_keys = copy.deepcopy(exp.ethtool.opts['enabled'])
+                for device_opt_category in exp.device_opts:
+                    for device_opt in device_opt_category:
+                        all_opt_keys.append(device_opt[0])
+                #print(opt[0],all_opt_keys)
+                if opt[0] in all_opt_keys: opt_data.append("1")
+                else: opt_data.append("0")
+            all_opt_data.append(opt_data)
+        out_plots = ["tiles.{}.{}".format(analysis.sort_by_key,ext)
+               for ext in ["pdf","png"]]
+        nic_of_time.plot.tile(opts,all_opt_data,labels,out_plots)
+
         with open(out+"/"+analysis.sort_by_key+".csv","w") as f:
             f.write(",".join([str(x[0][analysis.sort_by_key]) for x in responses]))
             f.write("\n")
@@ -77,7 +99,6 @@ def run(opts):
 
         # Category analysis.
         for category,enabled_options in opts.categories.items():
-            print(category)
             filtered_responses = []
             for i in range(0,len(enabled_options)+1):
                 for combination in combinations(enabled_options,i):

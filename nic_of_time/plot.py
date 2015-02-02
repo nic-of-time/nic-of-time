@@ -44,6 +44,21 @@ def bars(opts, analyses, stats, stat_colors,
     if p.returncode != 0:
         raise Exception("Plot failed.")
 
+def tile(opts,data,data_labels,output_files):
+    print("Plotting: grouped_bars")
+    mkdir_p(opts.plot_dir)
+    assert(len(data) == len(data_labels)) # TODO Exception
+    cmd = [opts.r_dir+"/tile.r",
+        ";".join([",".join(row) for row in data]),
+        ",".join(data_labels),
+        ",".join(opts.plot_dir+"/"+x for x in output_files)
+    ]
+    print("  + {}".format(" ".join(cmd)))
+    p = Popen(cmd)
+    p.communicate()
+    if p.returncode != 0:
+        raise Exception("Plot failed.")
+
 def grouped_bars(opts, analyses, data_labels, stats, stat_colors,
                  ylabel, xlabel, output_files):
     print("Plotting: grouped_bars")

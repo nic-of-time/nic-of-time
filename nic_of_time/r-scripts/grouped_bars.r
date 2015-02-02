@@ -29,6 +29,7 @@ df <- data.frame(
 ggplot(data=df, aes(x=numParallel, y=data, fill=opts)) +
   geom_bar(stat="identity", position=position_dodge(), colour="black") +
   theme_bw() +
+  theme(legend.title=element_blank(),legend.position="bottom") +
   xlab(xlabel) +
   ylab(ylabel) +
   scale_fill_manual(values=stat_colors)

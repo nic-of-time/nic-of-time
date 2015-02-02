@@ -7,6 +7,8 @@ class Mlx4:
         self.en_opts = None
         self.core_opts = None
 
+    def get_opts(self): return self.en_opts+self.core_opts
+
     def get_combinations(self):
         en_c = []
         for i in range(0,len(self.en_opts)+1):
@@ -37,17 +39,20 @@ class Mlx4:
     def init(self,opts,module_opt_str):
         print("  + Initializing mlx4")
         for node in opts.nodes:
-            cmd = ["ssh", node.external_address,
-                   "sudo {}/mlx4.sh {} \"{}\"".format(
-                       opts.remote_config_scripts_dir,
-                       opts.device.interface_name,
-                       module_opt_str)]
-            p = Popen(cmd,stdout=PIPE,stderr=PIPE)
-            out = p.communicate()
-            if p.returncode != 0:
-                print(cmd)
-                print(out)
-                return p.returncode
+            if node.explore_options:
+                cmd = ["ssh", node.external_address,
+                       "sudo {}/mlx4.sh {} \"{}\"".format(
+                           opts.remote_config_scripts_dir,
+                           opts.device.interface_name,
+                           module_opt_str)]
+                p = Popen(cmd,stdout=PIPE,stderr=PIPE)
+                out = p.communicate()
+                if p.returncode != 0:
+                    print(cmd)
+                    print(out)
+                    return p.returncode
+            else:
+                print("Not setting mlx4 options for node: {}".format(node.external_address))
         return 0
 
     def get_exp_opts(self,exp_dir):

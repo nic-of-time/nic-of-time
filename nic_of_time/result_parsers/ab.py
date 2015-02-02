@@ -7,6 +7,7 @@ import sys
 
 import nic_of_time as nt
 import nic_of_time.result_parsers
+from nic_of_time.result_parsers.perf import PerfRun
 
 class AbRun:
     def __init__(self,exp_num,path,opts):
@@ -28,6 +29,12 @@ class AbRun:
                     r = re.search("(.*): *([\d\.]*)",line)
                     if r:
                         data[r.group(1)] = r.group(2)
+
+        if opts.perf_events:
+          self.perf = PerfRun(path,opts.nodes)
+          if not self.perf.is_valid:
+              self.is_valid = False
+              return
 
         if 'Requests per second' in data and float(data['Requests per second']) > 0:
             self.data=data

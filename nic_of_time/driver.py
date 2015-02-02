@@ -4,6 +4,7 @@ import re
 from subprocess import Popen,PIPE
 import sys
 import time
+import uuid
 
 from nic_of_time.helper import mkdir_p
 
@@ -26,42 +27,45 @@ def init_ethtool(opts,eth_opt_str,eth_log_fname):
     print("  + Initializing ethtool")
     log_f = open(eth_log_fname,"w")
     for node in opts.nodes:
-        cmd = ["ssh", node.external_address,
-               "sudo nohup {}/ethtool.sh {} \"{}\" {} {} {}".format(
-                   opts.remote_config_scripts_dir,
-                   opts.device.interface_name,
-                   eth_opt_str,
-                   opts.mtu,
-                   opts.txqueuelen,
-                   node.internal_address)]
-        p = Popen(cmd,stdout=PIPE,stderr=PIPE)
-        out = p.communicate()
-        if p.returncode != 0:
-            print(cmd)
-            print(out)
-            return p.returncode
-
-        # Log ethtool -i and ethtool -k from nodes
-        p = Popen(["ssh", node.external_address,
-                   "sudo ethtool -i {}; sudo ethtool -k {}".format(
+        if node.explore_options:
+            cmd = ["ssh", node.external_address,
+                   "sudo nohup {}/ethtool.sh {} \"{}\" {} {} {}".format(
+                       opts.remote_config_scripts_dir,
                        opts.device.interface_name,
-                       opts.device.interface_name)],
-                  stdout=PIPE,stderr=PIPE)
-        out = p.communicate()
-        log_f.write("\n\n==={}===\n\n".format(node.external_address))
-        log_f.write(out[0].decode())
-        if p.returncode != 0:
-            print(cmd)
-            print(out)
-            return p.returncode
-    log_f.close()
+                       eth_opt_str,
+                       opts.mtu,
+                       opts.txqueuelen,
+                       node.internal_address)]
+            p = Popen(cmd,stdout=PIPE,stderr=PIPE)
+            out = p.communicate()
+            if p.returncode != 0:
+                print(cmd)
+                print(out)
+                return p.returncode
+
+            # Log ethtool -i and ethtool -k from nodes
+            p = Popen(["ssh", node.external_address,
+                       "sudo ethtool -i {}; sudo ethtool -k {}".format(
+                           opts.device.interface_name,
+                           opts.device.interface_name)],
+                      stdout=PIPE,stderr=PIPE)
+            out = p.communicate()
+            log_f.write("\n\n==={}===\n\n".format(node.external_address))
+            log_f.write(out[0].decode())
+            if p.returncode != 0:
+                print(cmd)
+                print(out)
+                return p.returncode
+            log_f.close()
+        else:
+            print("Not setting ethtool options for node: {}".format(node.external_address))
     return 0
 
 def runExp(opts,exp_num,eth_opt_tups,dev_opts):
     print("=== Running experiment {} ===".format(exp_num))
     eth_opt_str = " ".join([x[1] + " on" for x in eth_opt_tups] + \
-                       [x[1] + " off" for x in opts.ethtool_opts
-                        if x not in eth_opt_tups])
+                           [x[1] + " off" for x in opts.ethtool_opts
+                            if x not in eth_opt_tups])
 
     if opts.kill_cmd:
         print("  + Sending '{}' to all nodes.".format(opts.kill_cmd))
@@ -80,6 +84,7 @@ def runExp(opts,exp_num,eth_opt_tups,dev_opts):
     print("  + Starting server processes.")
     fds = []
     server_procs = []
+    perf_procs = []
     for server_node in [n for n in opts.nodes if n.is_server]:
         print("    + node: {} ({})".format(server_node.external_address,server_node.internal_address))
         procs = []
@@ -104,10 +109,52 @@ def runExp(opts,exp_num,eth_opt_tups,dev_opts):
         print("  + Sleeping for {} seconds.".format(opts.sleep_after_server_seconds))
         time.sleep(opts.sleep_after_server_seconds)
 
+    for server_node in [n for n in opts.nodes if n.is_server]:
+        if opts.perf_events:
+            print("     + Starting perf on {}.".format(server_node.external_address))
+            perf_uuid = uuid.uuid1()
+            p = Popen(["ssh",server_node.external_address,
+                       "mkfifo /tmp/{}".format(perf_uuid)])
+            p.communicate()
+            cmd = "perf stat -a -e {} cat /tmp/{}".format(
+                opts.perf_events,
+                perf_uuid)
+            print("       + {}".format(cmd))
+            perf_fd = open("{}/{}/{}-perf".format(opts.data_dir,
+                                                  exp_num,
+                                                  server_node.external_address),
+                           "w")
+            perf_proc = Popen(["ssh",
+                               server_node.external_address,
+                               "sudo {}".format(cmd)],
+                              stderr=perf_fd)
+            perf_procs.append((server_node,perf_proc,perf_uuid))
+            fds.append(perf_fd)
+
     print("  + Starting client processes.")
     client_procs = []
     for client_node in [n for n in opts.nodes if not n.is_server]:
         print("    + node: {} ({})".format(client_node.external_address,client_node.internal_address))
+        if opts.perf_events:
+            print("     + Starting perf.".format(opts.perf_events))
+            perf_uuid = uuid.uuid1()
+            p = Popen(["ssh",client_node.external_address,
+                       "mkfifo /tmp/{}".format(perf_uuid)])
+            p.communicate()
+            cmd = "perf stat -a -e {} cat /tmp/{}".format(
+                opts.perf_events,
+                perf_uuid)
+            print("       + {}".format(cmd))
+            perf_fd = open("{}/{}/{}-perf".format(opts.data_dir,
+                                                  exp_num,
+                                                  client_node.external_address),
+                           "w")
+            perf_proc = Popen(["ssh",
+                               client_node.external_address,
+                               "sudo {}".format(cmd)],
+                              stderr=perf_fd)
+            perf_procs.append((client_node,perf_proc,perf_uuid))
+            fds.append(perf_fd)
         procs = []
         for cmd in client_node.commands:
             print("      + {}".format(cmd))
@@ -137,6 +184,12 @@ def runExp(opts,exp_num,eth_opt_tups,dev_opts):
                 proc.wait()
 
     print("  + Killing all processes.")
+    for node,ssh_proc,named_pipe_path in perf_procs:
+        p = Popen(["ssh",node.external_address,"echo > /tmp/{}; rm /tmp/{}".format(
+            named_pipe_path,named_pipe_path)])
+        p.communicate()
+        time.sleep(1) # Wait for perf's stderr.
+        ssh_proc.terminate()
     for node_procs in server_procs + client_procs:
         for proc in node_procs:
             try:

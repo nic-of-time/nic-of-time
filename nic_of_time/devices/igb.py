@@ -6,6 +6,8 @@ class Igb:
         self.interface_name = interface_name
         self.dev_opts = None
 
+    def get_opts(self): return self.dev_opts
+
     def get_combinations(self):
         dev_c = []
         for i in range(0,len(self.dev_opts)+1):
@@ -21,20 +23,25 @@ class Igb:
         return moduleOpts
 
     def init(self,opts,module_opt_str):
+        print("  + Skipping igb initialization")
+        return 0
         print("  + Initializing igb")
         for node in opts.nodes:
-            cmd = ["ssh", node.external_address,
-                   "sudo nohup {}/igb.sh {} \"{}\" {}".format(
-                       opts.remote_config_scripts_dir,
-                       opts.device.interface_name,
-                       module_opt_str,
-                       node.internal_address)]
-            p = Popen(cmd,stdout=PIPE,stderr=PIPE)
-            out = p.communicate()
-            if p.returncode != 0:
-                print(cmd)
-                print(out)
-                return p.returncode
+            if node.explore_options:
+                cmd = ["ssh", node.external_address,
+                       "sudo nohup {}/igb.sh {} \"{}\" {}".format(
+                           opts.remote_config_scripts_dir,
+                           opts.device.interface_name,
+                           module_opt_str,
+                           node.internal_address)]
+                p = Popen(cmd,stdout=PIPE,stderr=PIPE)
+                out = p.communicate()
+                if p.returncode != 0:
+                    print(cmd)
+                    print(out)
+                    return p.returncode
+            else:
+                print("Not setting igb options for node: {}".format(node.external_address))
         return 0
 
     def get_exp_opts(self,exp_dir):

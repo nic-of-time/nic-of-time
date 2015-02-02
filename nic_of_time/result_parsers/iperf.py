@@ -6,6 +6,7 @@ import sys
 
 import nic_of_time as nt
 import nic_of_time.result_parsers
+from nic_of_time.helper import flatmap
 
 class IperfRun:
     def __init__(self,exp_num,path,opts):
@@ -39,21 +40,24 @@ class IperfRun:
 
     def get_bandwidth_gbps(self,padding_seconds):
         def get_interval_bandwidth_gbps(data,padding_seconds):
-            duration = data['server_output_json']['start']['test_start']['duration']
-            intervals = data['server_output_json']['intervals']
-            rounded_interval = [x for x in intervals if
-              int(round(x['sum']['end'])) >= padding_seconds and
-              int(round(x['sum']['end'])) <= duration-padding_seconds]
-            intervals_bytes = [i['sum']['bytes'] for i in rounded_interval]
-            intervals_seconds = [i['sum']['seconds'] for i in rounded_interval]
-            intervals_gbps = [float(b*8)/(1E9*float(s)) for b,s in \
-                              zip(intervals_bytes,intervals_seconds)]
-            return intervals_gbps
+            if 'server_output_json' not in data:
+                return None
+            else:
+                duration = data['server_output_json']['start']['test_start']['duration']
+                intervals = data['server_output_json']['intervals']
+                rounded_interval = [x for x in intervals if
+                  int(round(x['sum']['end'])) >= padding_seconds and
+                  int(round(x['sum']['end'])) <= duration-padding_seconds]
+                intervals_bytes = [i['sum']['bytes'] for i in rounded_interval]
+                intervals_seconds = [i['sum']['seconds'] for i in rounded_interval]
+                intervals_gbps = [float(b*8)/(1E9*float(s)) for b,s in \
+                                  zip(intervals_bytes,intervals_seconds)]
+                return intervals_gbps
 
         assert(self.is_valid)
-        core_gbps = list(map(lambda x:
-                               get_interval_bandwidth_gbps(x,padding_seconds),
-                             self.json_results))
+        core_gbps = flatmap(lambda x:
+                            get_interval_bandwidth_gbps(x,padding_seconds),
+                            self.json_results)
         interval_gbps = [0.0] * len(core_gbps[0])
         for core_interval_gbps in core_gbps:
             for idx,val in enumerate(core_interval_gbps):
@@ -68,11 +72,12 @@ class IperfRun:
         assert(self.is_valid)
         host_cpu = []; remote_cpu = []; combined_cpu = []
         for run in self.json_results:
-          host_cpu.append(
-            run['end']['cpu_utilization_percent']['host_total'])
-          remote_cpu.append(
-            run['end']['cpu_utilization_percent']['remote_total'])
-          combined_cpu.append(host_cpu[-1]+remote_cpu[-1])
+          if 'cpu_utilization_percent' in run['end']:
+            host_cpu.append(
+              run['end']['cpu_utilization_percent']['host_total'])
+            remote_cpu.append(
+              run['end']['cpu_utilization_percent']['remote_total'])
+            combined_cpu.append(host_cpu[-1]+remote_cpu[-1])
         return {
             'host_mean': statistics.mean(host_cpu),
             'host_stdev': statistics.stdev(host_cpu),

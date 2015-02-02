@@ -37,14 +37,18 @@ class Options:
 
         self.categories = {}
 
+        self.perf_events = None
+
 class Node:
-    def __init__(self,external_address,internal_address=None,is_server=False):
+    def __init__(self,external_address,internal_address=None,is_server=False,
+                 explore_options=True):
         if not internal_address:
             internal_address = external_address
         self.external_address = external_address
         self.internal_address = internal_address
         self.is_server = is_server
         self.commands = []
+        self.explore_options = explore_options
 
 class Analysis:
     def __init__(self,exp_func,sort_by_key,output_dir,plot=True,reverse_sort=True,header_func=None):
