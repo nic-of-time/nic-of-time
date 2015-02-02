@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Server has all options enabled.
 
 import argparse
 import copy
@@ -22,8 +23,11 @@ if not args.drive and not args.analyze and not args.plot:
 opts = nt.Options() # nic-of-time options.
 opts.resume = True # Resume the experiment from an intermediate data state.
 opts.retry = 4
-opts.nodes = [nt.Node('s-h0',internal_address="10.53.1.32",is_server=True),
-              nt.Node('s-h1',internal_address="10.53.1.9")]
+opts.nodes = [nt.Node('s-h6',internal_address="10.53.1.29",is_server=True,
+                      explore_options=False),
+              nt.Node('s-h7',internal_address="10.53.1.4",
+                      explore_options=True)]
+opts.perf_events = "cycles,cache-references,cache-misses,faults,cs,migrations"
 server_address = opts.nodes[0].internal_address
 opts.nodes[0].commands = [] # nginx running in daemon mode.
 
@@ -61,27 +65,30 @@ opts.sleep_after_server_seconds = 5
 
 opts.analyses = [
     nt.Analysis(lambda exp: exp.get_data(),
-                output_dir = ".",
+                output_dir = "data",
                 sort_by_key = 'requests_per_second')
 ]
+perf_analyses = [opts.nodes[1].external_address+"-"+x for x in
+                 ["cycles","cache-misses","faults","cs","migrations",
+                  "cache-miss-ratio", "cache-references"]]
+perf_analyses += [opts.nodes[0].external_address+"-"+x for x in
+                  ["cycles","cache-misses","faults","cs","migrations",
+                   "cache-miss-ratio", "cache-references"]]
+opts.analyses += [nt.Analysis(lambda exp: exp.perf.results,
+                              output_dir = "perf",
+                              sort_by_key = key)
+                  for key in perf_analyses]
 
 opts.categories = {}
 
-exps = [["0_byte.no-keepalive",
-   "ab -n 100000 -c 500 http://{}:80/0_byte.file".format(server_address)],
-["1_kb.no-keepalive",
-   "ab -n 100000 -c 500 http://{}:80/1_kb.file".format(server_address)],
-["1_mb.keepalive",
-   "ab -n 25000 -k -c 500 http://{}:80/1_mb.file".format(server_address)],
-["1_mb.no-keepalive",
+exps = [["1_mb.no-keepalive",
    "ab -n 25000 -c 500 http://{}:80/1_mb.file".format(server_address)]]
-#exps = [["debug","sleep 10000"]]
 
 exp_opts = {}
-opts.plot_dir = "ab/plot"
+opts.plot_dir = "ab-jan24-3/plot"
 for tag, cmd in exps:
     opts.nodes[1].commands = [cmd]
-    prefix = "ab/"+tag
+    prefix = "ab-jan24-3/"+tag
     opts.data_dir = prefix + "/data"
     opts.analysis_dir = prefix + "/analysis"
     if args.drive:
@@ -91,7 +98,7 @@ for tag, cmd in exps:
     if args.plot:
         nt.plot.bars(
             opts = [opts],
-            analyses = ["requests_per_second.csv"],
+            analyses = ["data/requests_per_second.csv"],
             stats = ["Min","None","All","Max"],
             stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
             ylabel = "Requests per second",
@@ -100,20 +107,38 @@ for tag, cmd in exps:
 
         nt.plot.cdf(
             opts = [opts],
-            analyses = ["requests_per_second.csv"],
+            analyses = ["data/requests_per_second.csv"],
             data_labels = [" "],
             colors = ["#000000"],
             xlabel = "Requests per second",
             output_files = [tag+".rps.cdf.png",tag+".rps.cdf.pdf"]
         )
+        for key in perf_analyses:
+            nt.plot.cdf(
+                opts = [opts],
+                analyses = ["perf/{}.csv".format(key)],
+                data_labels = [" "],
+                colors = ["#000000"],
+                xlabel = key,
+                output_files = [tag+"."+key+".cdf."+ext for ext in ["png","pdf"]]
+            )
+
+            nt.plot.bars(
+                opts = [opts],
+                analyses = ["perf/{}.csv".format(key)],
+                stats = ["Min","None","All","Max"],
+                stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
+                ylabel = key,
+                output_files = [tag+"."+key+".bars."+ext for ext in ["png","pdf"]]
+            )
     exp_opts[tag]= copy.deepcopy(opts)
 
-if args.plot:
+if False:
     tags = ["0_byte.no-keepalive","1_kb.no-keepalive","1_mb.no-keepalive","1_mb.keepalive"]
     labels = ["Empty", "1 kb", "1 mb", "1 mb (keepalive)"]
     nt.plot.grouped_bars(
         opts = [exp_opts[x] for x in tags],
-        analyses = ["requests_per_second.csv"]*4,
+        analyses = ["data/requests_per_second.csv"]*4,
         data_labels = labels,
         stats = ["Min","None","All","Max"],
         stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],
@@ -138,7 +163,7 @@ if args.plot:
     labels = ["1 mb", "1 mb (keepalive)"]
     nt.plot.grouped_bars(
         opts = [exp_opts[x] for x in tags],
-        analyses = ["requests_per_second.csv"]*len(tags),
+        analyses = ["data/requests_per_second.csv"]*len(tags),
         data_labels = labels,
         stats = ["Min","None","All","Max"],
         stat_colors = ["#6497b1","#005b96","#03396c","#011f4b"],

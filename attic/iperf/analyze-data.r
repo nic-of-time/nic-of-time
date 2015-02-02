@@ -31,6 +31,23 @@ p <- ggplot(df_m,aes(x=value)) +
     minor_breaks=seq(0,max(df),1))
 ggsave("analysis/bw.pdf",width=7,height=6)
 
+df <- data.frame(u4,t4)
+df_m <- melt(df)
+p <- ggplot(df_m,aes(x=value)) +
+  xlab("Bandwidth (Gbps)") +
+  ylab("") +
+  stat_ecdf(aes(group=variable,colour=variable)) +
+  theme_bw() +
+  scale_color_manual(
+    values = c("#B2B2FF","#0000E6"),
+    labels=c("UDP, 4 Parallel","TCP, 4 Parallel")) +
+  theme(legend.title=element_blank(),legend.position="bottom")
+  # scale_x_continuous(
+  #   limits=c(0,max(df)),
+  #   breaks=seq(0,max(df),5),
+  #   minor_breaks=seq(0,max(df),1))
+ggsave("analysis/bw-4.pdf",width=7,height=6)
+
 
 u1 = as.numeric(read.csv("analysis/udp.1.cpu.meanR.csv",header=F))
 t1 = as.numeric(read.csv("analysis/tcp.1.cpu.meanR.csv",header=F))
@@ -216,8 +233,6 @@ for (idx in udp_mask_indices) {
   udp_cpuR4_masked[masked_idx] = udp_cpuR4[idx]
   masked_idx <- masked_idx + 1
 }
-print(length(udp_cpuR4_masked))
-print(length(udp_bw4_masked))
 
 ## df <- data.frame(udp_bw4,udp_cpuAvg4)
 ## convex_hull <- df[chull(df$udp_bw4,df$udp_cpuAvg4),]
@@ -267,6 +282,8 @@ tcp_bw4 = as.numeric(read.csv("analysis/tcp.4.bw.means.csv",header=F))
 tcp_cpuR4 = as.numeric(read.csv("analysis/tcp.4.cpu.meanR.csv",header=F))
 tcp_cpuH4 = as.numeric(read.csv("analysis/tcp.4.cpu.meanH.csv",header=F))
 tcp_cpuAvg4 = colMeans(rbind(tcp_cpuR4,tcp_cpuH4))
+print(tcp_cpuAvg4)
+print(tcp_bw4)
 
 tcp_mask_indices = as.numeric(
   read.csv("analysis/tx-sg-tso.bw-indices.csv",header=F))
@@ -286,14 +303,13 @@ df <- merge(df,convex_hull)
 
 p <- ggplot(df) +
   xlab("CPU Utilization (%)") +
-  ylab("Bandwidth") +
+  ylab("Bandwidth (Gbps)") +
   geom_point(aes(x=tcp_cpuAvg4, y=tcp_bw4)) +
   geom_point(aes(x=tcp_cpuAvg4_masked, y=tcp_bw4_masked,color='masked')) +
   geom_smooth(aes(x=tcp_cpuAvg4, y=tcp_bw4), method="lm", formula = y~x,
     fullrange=TRUE) +
   theme_bw() +
-  theme(legend.title=element_blank()) +
-  expand_limits(x=0,y=0) +
+  theme(legend.title=element_blank(),legend.position='bottom') +
   geom_polygon(aes(x=hull_x,y=hull_y),alpha=0.2) +
   scale_color_manual(
     name="",
@@ -302,6 +318,17 @@ p <- ggplot(df) +
   # geom_text(aes(x=tcp_cpuR4,y=tcp_bw4,label=tcp_cpuR4,
     # size=1,hjust=0,vjust=0,color=tcp_cpuR4))
 ggsave("analysis/tcp-4-cpu-bandwidth.pdf",width=7,height=6)
+
+p <- ggplot(df) +
+  xlab("CPU Utilization (%)") +
+  ylab("Bandwidth (Gbps)") +
+  geom_point(aes(x=tcp_cpuAvg4, y=tcp_bw4)) +
+  geom_smooth(aes(x=tcp_cpuAvg4, y=tcp_bw4), method="lm", formula = y~x,
+    fullrange=TRUE) +
+  theme_bw() +
+  theme(legend.title=element_blank()) +
+  geom_polygon(aes(x=hull_x,y=hull_y),alpha=0.2) +
+ggsave("analysis/tcp-4-cpu-bandwidth-motivation.pdf",width=7,height=6)
 
 u1b = as.numeric(read.csv("analysis/udp.1.bw.none.all.max.min.csv",header=F))
 u2b = as.numeric(read.csv("analysis/udp.2.bw.none.all.max.min.csv",header=F))
@@ -323,9 +350,10 @@ df <- data.frame(
 ggplot(data=df, aes(x=numParallel, y=bandwidth, fill=opts)) +
   geom_bar(stat="identity", position=position_dodge(), colour="black") +
   theme_bw() +
+  theme(legend.position="bottom") +
   xlab("Number of Parallel Connections") +
   ylab("Bandwidth (Gbps)") +
-  scale_fill_manual(values=c("#6497b1","#005b96","#03396c","#011f4b"))
+  scale_fill_manual("",values=c("#6496b1","#005b96","#03396c","#011f4b"))
 ggsave("analysis/udp-opts.pdf",width=7,height=6)
 
 t1b = as.numeric(read.csv("analysis/tcp.1.bw.none.all.max.min.csv",header=F))
@@ -348,6 +376,7 @@ df <- data.frame(
 ggplot(data=df, aes(x=numParallel, y=bandwidth, fill=opts)) +
   geom_bar(stat="identity", position=position_dodge(), colour="black") +
   theme_bw() +
+  theme(legend.title=element_blank()) +
   xlab("Number of Parallel Connections") +
   ylab("Bandwidth (Gbps)") +
   scale_fill_manual(values=c("#6497b1","#005b96","#03396c","#011f4b"))

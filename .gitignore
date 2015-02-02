@@ -3,3 +3,8 @@ benchmarks/iperf
 benchmarks/ab
 benchmarks/ycsb
 benchmarks/*.out
+benchmarks/ab-jan24-*/
+benchmarks/*igb/
+benchmarks/ycsb-load/
+
+Rplots.pdf

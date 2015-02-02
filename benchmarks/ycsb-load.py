@@ -7,7 +7,7 @@ import sys
 sys.path.append("..")
 import nic_of_time as nt
 import nic_of_time.result_parsers.ycsb
-import nic_of_time.devices.igb
+import nic_of_time.devices.mlx4
 import nic_of_time.plot
 
 parser = argparse.ArgumentParser()
@@ -22,9 +22,8 @@ if not args.drive and not args.analyze and not args.plot:
 opts = nt.Options() # nic-of-time options.
 opts.resume = True # Resume the experiment from an intermediate data state.
 opts.retry = 4
-opts.nodes = [nt.Node('s-h4',internal_address="10.51.1.4",is_server=True),
-              nt.Node('s-h5',internal_address="10.51.1.20")]
-opts.perf_events = "cycles,cache-references,cache-misses,faults,cs,migrations"
+opts.nodes = [nt.Node('s-h2',internal_address="10.53.1.29",is_server=True),
+              nt.Node('s-h3',internal_address="10.53.1.33")]
 
 opts.txqueuelen = 10000 # Length of the transmit queue.
 opts.mtu = 9000 # Maximum transmission unit.
@@ -47,10 +46,24 @@ opts.ethtool_opts = [
     #['tx-vlan-offload','txvlan'],
     ['receive-hashing','rxhash']
 ]
-opts.device = nt.devices.igb.Igb("eth0")
-opts.device.dev_opts = []
-    # ['rss','RSS','8']
-# ]
+opts.device = nt.devices.mlx4.Mlx4("fge0")
+opts.device.en_opts = [
+    ['udp-rss','udp_rss','1']
+]
+opts.device.core_opts = [
+    ['flow-steering','log_num_mgm_entry_size','-1']
+]
+
+opts.categories = {
+    'mem-cpu': ['rx-checksumming', 'tx-checksumming', 'scatter-gather',
+                'tcp-segmentation-offload', 'generic-segmentation-offload',
+                'generic-receive-offload'],
+    'locality': ['receive-hashing', 'udp-rss', 'flow-steering'],
+    'receiver': ['rx-checksumming', 'generic-receive-offload', 'receive-hashing',
+                 'udp-rss', 'flow-steering'],
+    'sender': ['tx-checksumming', 'scatter-gather', 'tcp-segmentation-offload',
+               'generic-segmentation-offload']
+}
 
 opts.timeout_seconds = None
 opts.sleep_after_server_seconds = 10
@@ -63,17 +76,7 @@ opts.analyses = [
                 output_dir = "data",
                 sort_by_key = 'latency')
 ]
-opts.categories = {
-    'mem-cpu': ['rx-checksumming', 'tx-checksumming', 'scatter-gather',
-                'tcp-segmentation-offload', 'generic-segmentation-offload',
-                'generic-receive-offload'],
-    'locality': ['receive-hashing', 'udp-rss', 'flow-steering'],
-    'receiver': ['rx-checksumming', 'generic-receive-offload', 'receive-hashing',
-                 'udp-rss', 'flow-steering'],
-    'sender': ['tx-checksumming', 'scatter-gather', 'tcp-segmentation-offload',
-               'generic-segmentation-offload']
-}
-opts.plot_dir = "ycsb-igb/plot"
+opts.plot_dir = "ycsb-load/plot"
 
 server_address = opts.nodes[0].internal_address
 opts.nodes[0].commands = ["redis-server --bind 0.0.0.0"]
@@ -86,7 +89,7 @@ config = "-p 'redis.host={}' -p 'redis.port=6379' -p 'recordcount=10000' -p 'ope
 opts.nodes[1].commands = [
     "{} load redis -s -P {} {} && {} run redis -s -P {} {}".format(
         ycsb_bin,workload,config,ycsb_bin,workload,config)]
-prefix = "ycsb-igb"
+prefix = "ycsb-load"
 opts.data_dir = prefix + "/data"
 opts.analysis_dir = prefix + "/analysis"
 if args.drive:
@@ -128,15 +131,6 @@ if args.plot:
         colors = ["#000000"],
         xlabel = "Latency (us)",
         output_files = ["latency.cdf.png","latency.cdf.pdf"]
-    )
-
-    nt.plot.scatter(
-        opts = [opts]*2,
-        analyses = ["data/latency.csv", "data/throughput.csv"],
-        convex_hull = True,
-        xlabel = "Latency (us)",
-        ylabel = "Throughput (ops/second)",
-        output_files = ["latency.throughput.pdf","latency.throughput.png"]
     )
 
     # Categories
